@@ -1,0 +1,128 @@
+# PRD: Product Requirements Document
+## Aplicación FIWARE de Monitorización de Calidad del Aire y Ruido Urbano
+
+### Versión: 1.0 | Fecha: 27-04-2026
+
+---
+
+## 1. RESUMEN EJECUTIVO
+
+### Visión
+Desarrollar una **plataforma IoT inteligente y escalable** que integre datos en tiempo real de sensores distribuidos en ciudades españolas para monitorizar y visualizar la calidad del aire y la contaminación acústica urbana, permitiendo a usuarios (administraciones, ciudadanos, investigadores) tomar decisiones informadas basadas en datos.
+
+### Objetivo Principal
+Crear un **Dashboard geoespacial avanzado** que:
+- Visualice métricas ambientales en tiempo real mediante mapas interactivos (Leaflet/OSM)
+- Calcule automáticamente índices de calidad del aire (ICA) y niveles de ruido
+- Proporcione análisis históricos y predicciones de contaminación
+- Integre un asistente IA que interprete métricas en lenguaje natural
+
+### Casos de Uso Primarios
+1. **Ciudadano**: Consultar calidad del aire y ruido en su zona (app web responsiva)
+2. **Administración**: Monitorizar contaminación en tiempo real y tomar medidas preventivas
+3. **Investigador**: Acceder a datos históricos para análisis epidemiológico y ambiental
+4. **Sensor IoT**: Enviar observaciones a través de IoT Agent (HTTP)
+
+---
+
+## 2. DESCRIPCIÓN DE LA SOLUCIÓN
+
+### 2.1 Componentes Principales
+
+#### Stack FIWARE
+```
+Sensor IoT → IoT Agent (HTTP) → Orion-LD Context Broker → QuantumLeap → CrateDB/InfluxDB
+                                            ↓
+                                    Backend API (FastAPI)
+                                            ↓
+                                    Frontend (React + Leaflet + ChartJS)
+```
+
+#### Tecnologías por Capa
+
+| Capa | Componente | Tecnología | Propósito |
+|------|-----------|-----------|----------|
+| **Ingesta** | IoT Agent | HTTP Protocol | Recibir datos de sensores |
+| **Broker** | Orion-LD | NGSI-LD | Gestionar entidades contextuales |
+| **Persistencia** | QuantumLeap | CrateDB/InfluxDB | Series temporales históricas |
+| **Backend** | API REST | FastAPI + Python | Procesamiento y lógica de negocio |
+| **ML/Analytics** | Data Science | Pandas, GeoPandas, Scikit-learn, TensorFlow | Predicción y análisis |
+| **IA** | Agent LLM | OpenAI/LLaMA | Interpretación de métricas |
+| **Frontend** | Dashboard | React 18 + TypeScript | Interfaz web responsiva |
+| **Visualización** | Mapas | Leaflet + OpenStreetMap | Geolocalización de sensores |
+| **Gráficos** | Analytics | ChartJS | Series temporales y análisis |
+| **3D** | Experimental | ThreeJS | Visualización inmersiva (futuro) |
+| **Dashboards** | Grafana | Grafana | Dashboards operacionales |
+
+---
+
+## 3. FUNCIONALIDADES CLAVE
+
+### 3.1 Panel Inicial (Dashboard Principal)
+
+#### 3.1.1 Widget de Índice de Calidad del Aire (ICA)
+```
+┌─────────────────────────────────┐
+│  CALIDAD DEL AIRE GENERAL       │
+├─────────────────────────────────┤
+│  ICA: 65 / 500                  │
+│  Estado: ✅ BUENO               │
+│                                 │
+│  PM2.5: 28.5 µg/m³              │
+│  PM10:  65.4 µg/m³              │
+│  NO2:   89.5 µg/m³              │
+│  O3:    62.8 µg/m³              │
+└─────────────────────────────────┘
+```
+
+**Cálculo de ICA (EPA/AQI Índice estadounidense adaptado a UE):**
+```
+ICA = MAX(
+  subindex(PM2.5),
+  subindex(PM10),
+  subindex(NO2),
+  subindex(O3)
+)
+
+Umbrales de Estado (WHO 2021):
+- GOOD:       0-50   (Verde)    → Apto para actividades al aire libre
+- MODERATE:  51-100  (Amarillo) → Grupos sensibles deben precaver
+- POOR:      101-150 (Naranja)  → Recomendación de reducir actividad
+- VERY_POOR: >150    (Rojo)     → Riesgo para la salud general
+```
+
+
+---
+
+## 11. RIESGOS IDENTIFICADOS
+
+| Riesgo | Probabilidad | Impacto | Mitigación |
+|--------|-------------|--------|-----------|
+| Sensors IoT sin conectividad | ALTA | ALTO | Fallback local + retry |
+| Orion-LD lentitud con >10k entidades | MEDIA | ALTO | Indexación, particionamiento |
+| Precisión de ML baja con pocos datos | MEDIA | MEDIO | Transfer learning, datasynthesis |
+| Latencia de QuantumLeap > 5min | BAJA | MEDIO | Caché Redis, batching |
+
+---
+
+## 12. TIMELINE PROPUESTO
+
+```
+Semana 1-2:  Infraestructura FIWARE, Docker Compose setup
+Semana 3-4:  Backend API + Cálculos, Dashboard MVP
+Semana 5-6:  Mapas Leaflet, Gráficos ChartJS
+Semana 7-8:  Testing, Documentación, Preparación producción
+```
+
+---
+
+## 13. REFERENCIAS Y RECURSOS
+
+- FIWARE Catalogue: https://catalogue.fiware.org/
+- Orion-LD Docs: https://github.com/FIWARE/context.Orion-LD
+- QuantumLeap: https://github.com/smartsenseslab/ngsi-timeseries-api
+- Smart Data Models: https://smartdatamodels.org/environment/AirQualityObserved
+- OpenAQ Dataset: https://openaq.org/
+- Leaflet.js: https://leafletjs.com/
+- Chart.js: https://www.chartjs.org/
+
