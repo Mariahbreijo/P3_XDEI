@@ -11,18 +11,20 @@
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
     <script type="module" src="./app_fiware_sync.js?v=20260505a"></script>
+    <script type="module" src="./advanced_map.js?v=20260505a"></script>
   </head>
-  <body>
+  <body data-active-view="main">
     <div class="backdrop"></div>
     <header class="topbar">
       <div>
@@ -30,13 +32,19 @@
         <h1>Smart Air & Noise Monitor</h1>
       </div>
       <div class="topbar-actions">
-        <span class="pill">Orion-LD Ready</span>
-        <span class="pill">QuantumLeap</span>
-        <span class="pill">Leaflet + ChartJS</span>
+        <nav class="topnav" aria-label="Navegación principal">
+          <button class="topnav-tab is-active" type="button" data-view-target="main">Panel principal</button>
+          <button class="topnav-tab" type="button" data-view-target="advanced">Mapa avanzado</button>
+        </nav>
+        <div class="topbar-pills">
+          <span class="pill">Orion-LD Ready</span>
+          <span class="pill">QuantumLeap</span>
+          <span class="pill">Leaflet + ChartJS</span>
+        </div>
       </div>
     </header>
 
-    <main class="layout">
+    <main class="layout view view-main" data-view="main">
       <section class="hero-card">
         <div>
           <p class="label">Panel Inicial</p>
@@ -105,6 +113,7 @@
         <div id="selected-city-details"></div>
       </section>
 
+
       <section class="panel footer-panel">
         <div class="panel-header">
           <div>
@@ -115,6 +124,78 @@
         </div>
         <pre class="flow-diagram">Sensor IoT  →  IoT Agent  →  Orion-LD  →  QuantumLeap  →  Backend API  →  Dashboard</pre>
       </section>
-    </main>
+      </main>
+
+      <section class="view view-advanced" data-view="advanced" id="advanced-geospatial-section">
+        <div class="panel panel-advanced">
+          <div class="panel-header advanced-panel-header">
+            <div>
+              <p class="label">Sección avanzada</p>
+              <h3>Mapa Geoespacial Avanzado</h3>
+              <p class="lead advanced-lead">
+                Vista independiente a pantalla completa con clustering dinámico, capas temáticas de aire y ruido, y filtros conectados a Orion-LD.
+              </p>
+            </div>
+            <div class="advanced-actions">
+              <button class="ghost-button" id="advanced-map-refresh" type="button">Actualizar Orion</button>
+              <span class="panel-badge" id="advanced-map-status">Cargando sensores...</span>
+            </div>
+          </div>
+
+          <div class="advanced-shell">
+            <aside class="advanced-sidebar">
+              <div class="advanced-sidebar-block">
+                <h4>Filtros</h4>
+                <label class="field">
+                  <span>Ciudad</span>
+                  <select id="advanced-filter-city">
+                    <option value="all">Todas</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Tipo de sensor</span>
+                  <select id="advanced-filter-type">
+                    <option value="all">Todos</option>
+                    <option value="air">Calidad del aire</option>
+                    <option value="noise">Ruido urbano</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>PM10 &gt; valor</span>
+                  <input id="advanced-filter-pm10" type="number" min="0" step="0.1" placeholder="Ej. 50" />
+                </label>
+                <label class="field">
+                  <span>PM2_5 &gt; valor</span>
+                  <input id="advanced-filter-pm25" type="number" min="0" step="0.1" placeholder="Ej. 35" />
+                </label>
+                <label class="field">
+                  <span>LAeq &gt; valor</span>
+                  <input id="advanced-filter-laeq" type="number" min="0" step="0.1" placeholder="Ej. 70" />
+                </label>
+              </div>
+
+              <div class="advanced-sidebar-block">
+                <h4>Capas</h4>
+                <ul class="legend-list">
+                  <li><span class="legend-dot legend-air-good"></span> Aire bueno</li>
+                  <li><span class="legend-dot legend-air-moderate"></span> Aire moderado</li>
+                  <li><span class="legend-dot legend-air-poor"></span> Aire malo</li>
+                  <li><span class="legend-dot legend-air-critical"></span> Aire crítico</li>
+                  <li><span class="legend-dot legend-noise"></span> Ruido urbano</li>
+                </ul>
+              </div>
+
+              <div class="advanced-sidebar-block">
+                <h4>Sincronización</h4>
+                <p id="advanced-map-selection" class="sidebar-note">La selección del dashboard se reflejará aquí.</p>
+              </div>
+            </aside>
+
+            <div class="advanced-map-viewport">
+              <div id="advanced-map"></div>
+            </div>
+          </div>
+        </div>
+      </section>
   </body>
 </html>

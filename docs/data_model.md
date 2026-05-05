@@ -10,6 +10,13 @@ Este documento recoge el subconjunto de entidades NGSI-LD que la implementación
 - Incluir `observedAt` o `dateObserved` cuando sea relevante.
 - Usar identidades URN del formato `urn:ngsi-ld:<Type>:ES-<City>-<id>` para demo.
 
+Nota: En la versión actual se generan múltiples sensores por ciudad y por barrio (neighborhood). Los IDs de entidad y dispositivos siguen el patrón:
+
+- Entidad: `urn:ngsi-ld:<Type>:ES-<City>-<Neighborhood>-<NN>` (ej. `urn:ngsi-ld:AirQualityObserved:ES-Madrid-Centro-01`)
+- Dispositivo / device_id (IoT Agent): `<type>-sensor-<city>-<neighborhood>-<NN>` (ej. `air-sensor-madrid-centro-01`)
+
+Cada dispositivo provisionado incluye `static_attributes.location` (GeoProperty) con coordenadas ligeramente diferentes por sensor dentro de la misma zona para permitir clustering en el frontend.
+
 ## 3. Entidades usadas en el repositorio
 
 ### 3.1 AirQualityObserved
@@ -22,6 +29,7 @@ Atributos relevantes observados en el código:
 - `refDevice`: `Relationship` (URN del dispositivo)
 - `dateObserved`: `Property` (ISO timestamp)
 - `CO2`, `PM1`, `PM2_5`, `PM10`, `NO2`, `O3`: `Property` con `value` y `unitCode`
+ - `CO2`, `PM1`, `PM2_5`, `PM10`, `NO2`, `O3`: `Property` con `value` y `unitCode` (nota: `O3` está incluido por defecto en los sensores de aire)
 - `temperature`, `relativeHumidity`, `airQualityIndex`, `airQualityLevel`
 
 Notas de uso:
@@ -45,7 +53,7 @@ AirQualityObserved ejemplo (usado por `orion_service.bootstrap_demo_entities`):
 
 ```json
 {
-  "id": "urn:ngsi-ld:AirQualityObserved:ES-Madrid-01",
+  "id": "urn:ngsi-ld:AirQualityObserved:ES-Madrid-Centro-01",
   "type": "AirQualityObserved",
   "location": {"type": "GeoProperty", "value": {"type": "Point", "coordinates": [-3.7038, 40.4168]}},
   "address": {"type": "Property", "value": {"streetAddress": "Plaza Mayor", "addressLocality": "Madrid", "addressCountry": "ES"}},

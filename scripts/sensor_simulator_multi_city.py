@@ -30,37 +30,42 @@ NGSI_LD_CONTEXT = "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
 # City configurations with entity IDs and types
 CITIES = {
     "madrid": {
-        "id": "urn:ngsi-ld:AirQualityObserved:ES-Madrid-01",
         "type": "air",
         "name": "Madrid",
+        "center": (40.4168, -3.7038),
+        "neighborhoods": ["Centro", "Norte", "Sur", "Este", "Oeste"],
         "pm10_range": (10, 80),
         "pm25_range": (5, 40),
         "no2_range": (20, 100),
     },
     "barcelona": {
-        "id": "urn:ngsi-ld:NoiseLevelObserved:ES-Barcelona-05",
         "type": "noise",
         "name": "Barcelona",
+        "center": (41.3851, 2.1734),
+        "neighborhoods": ["Centro", "Norte", "Sur", "Eixample"],
         "laeq_range": (60, 80),
     },
     "corunna": {
-        "id": "urn:ngsi-ld:AirQualityObserved:ES-Corunna-01",
         "type": "air",
         "name": "A Coruña",
+        "center": (43.3623, -8.4115),
+        "neighborhoods": ["Centro", "Ensanche", "Riazor"],
         "pm10_range": (15, 50),
         "pm25_range": (8, 30),
         "no2_range": (20, 60),
     },
     "alicante": {
-        "id": "urn:ngsi-ld:NoiseLevelObserved:ES-Alicante-01",
         "type": "noise",
         "name": "Alicante",
+        "center": (38.3452, -0.4810),
+        "neighborhoods": ["Centro", "Playa", "Mercado"],
         "laeq_range": (55, 75),
     },
     "bilbao": {
-        "id": "urn:ngsi-ld:AirQualityObserved:ES-Bilbao-02",
         "type": "air",
         "name": "Bilbao",
+        "center": (43.2630, -2.9350),
+        "neighborhoods": ["Centro", "Abando", "Deusto"],
         "pm10_range": (20, 70),
         "pm25_range": (10, 35),
         "no2_range": (30, 90),
@@ -114,6 +119,7 @@ def run_simulator(
     orion_url: str,
     count: int = 20,
     interval: float = 5.0,
+    per_neighborhood: int = 2,
 ):
     # No tenant headers: operate against NGSI-LD entities directly
     headers = {
@@ -121,58 +127,92 @@ def run_simulator(
         # Do not send Link header if we include @context inline in the payload
     }
 
-    # Initialize values for each city
-    state = {}
+    # Build entities list: multiple sensors per neighborhood with slight coordinate jitter
+    entities: list[dict] = []
+    state: dict = {}
     for city_key, city_cfg in CITIES.items():
-        if city_cfg["type"] == "air":
-            state[city_key] = {
-                "pm10": random.uniform(*city_cfg["pm10_range"]),
-                "pm25": random.uniform(*city_cfg["pm25_range"]),
-                "no2": random.uniform(*city_cfg["no2_range"]),
-            }
-        else:  # noise
-            state[city_key] = {
-                "laeq": random.uniform(*city_cfg["laeq_range"]),
-            }
+        lat_center, lon_center = city_cfg["center"]
+        neighs = city_cfg.get("neighborhoods", ["Centro"])[:]
+        # If neighborhoods smaller than requested per_neighborhood, repeat with suffix
+        for neigh in neighs:
+            for idx in range(1, per_neighborhood + 1):
+                nid = f"urn:ngsi-ld:{'AirQualityObserved' if city_cfg['type']=='air' else 'NoiseLevelObserved'}:ES-{city_cfg['name'].replace(' ', '')}-{neigh.replace(' ', '')}-{idx:02d}"
+                # jitter coords slightly (approx +/- ~0.01 degrees)
+                jitter_lat = lat_center + random.uniform(-0.008, 0.008)
+                jitter_lon = lon_center + random.uniform(-0.008, 0.008)
+                ent = {
+                    "id": nid,
+                    "city": city_cfg["name"],
+                    "neighborhood": neigh,
+                    "type": city_cfg["type"],
+                    "coords": (jitter_lat, jitter_lon),
+                }
+                # initial sensor values
+                if city_cfg["type"] == "air":
+                    ent.update(
+                        {
+                            "pm10": random.uniform(*city_cfg["pm10_range"]),
+                            "pm25": random.uniform(*city_cfg["pm25_range"]),
+                            "no2": random.uniform(*city_cfg["no2_range"]),
+                        }
+                    )
+                else:
+                    ent.update({"laeq": random.uniform(*city_cfg["laeq_range"])})
+                entities.append(ent)
+
+    # create a per-entity state copy for random walks
+    for ent in entities:
+        state[ent["id"]] = {k: v for k, v in ent.items() if k in ("pm10", "pm25", "no2", "laeq")}
 
     with httpx.Client(base_url=orion_url.rstrip("/"), headers=headers, timeout=10.0) as client:
         for i in range(1, count + 1):
-            # Update state for each city
-            for city_key, city_cfg in CITIES.items():
-                if city_cfg["type"] == "air":
-                    state[city_key]["pm10"] = random_walk(state[city_key]["pm10"], *city_cfg["pm10_range"], step=8.0)
-                    state[city_key]["pm25"] = random_walk(state[city_key]["pm25"], *city_cfg["pm25_range"], step=4.0)
-                    state[city_key]["no2"] = random_walk(state[city_key]["no2"], *city_cfg["no2_range"], step=10.0)
+            # Update each entity (sensor) state and push updates
+            for ent in entities:
+                eid = ent["id"]
+                # Use entity-local state
+                if ent["type"] == "air":
+                    # perform random walk on the per-entity values
+                    ckey = ent["city"].lower()
+                    state[eid]["pm10"] = random_walk(state[eid]["pm10"], *CITIES[ckey]["pm10_range"], step=6.0) if "pm10" in state[eid] else random.uniform(10, 80)
+                    state[eid]["pm25"] = random_walk(state[eid]["pm25"], *CITIES[ckey]["pm25_range"], step=3.0) if "pm25" in state[eid] else random.uniform(5, 40)
+                    state[eid]["no2"] = random_walk(state[eid]["no2"], *CITIES[ckey]["no2_range"], step=8.0) if "no2" in state[eid] else random.uniform(20, 100)
 
-                    payload = make_air_payload(state[city_key]["pm10"], state[city_key]["pm25"], state[city_key]["no2"])
-                    # Build full entity for deterministic upsert: POST first, then PUT attrs on 409
+                    payload = make_air_payload(state[eid]["pm10"], state[eid]["pm25"], state[eid]["no2"])
+                    # Build full entity for deterministic upsert: include location on first create
+                    lat, lon = ent["coords"]
                     entity = {
-                        "id": city_cfg["id"],
+                        "id": eid,
                         "type": "AirQualityObserved",
+                        "location": {"type": "GeoProperty", "value": {"type": "Point", "coordinates": [lon, lat]}},
                         **payload,
+                        "dateObserved": {"type": "Property", "value": iso_now()},
                         "@context": NGSI_LD_CONTEXT,
                     }
                     try:
-                        status_code = upsert_entity(client, city_cfg["id"], entity, payload)
-                        print(f"[#{i}] {city_cfg['name']} air upsert OK (HTTP {status_code})")
+                        status_code = upsert_entity(client, eid, entity, payload)
+                        print(f"[#{i}] {ent['city']} {ent['neighborhood']} air upsert OK {eid} (HTTP {status_code})")
                     except Exception as exc:
-                        print(f"[#{i}] Failed UPSERT {city_cfg['name']} air: {exc}", file=sys.stderr)
+                        print(f"[#{i}] Failed UPSERT {eid} air: {exc}", file=sys.stderr)
 
                 else:  # noise
-                    state[city_key]["laeq"] = random_walk(state[city_key]["laeq"], *city_cfg["laeq_range"], step=6.0)
+                    ckey = ent["city"].lower()
+                    state[eid]["laeq"] = random_walk(state[eid]["laeq"], *CITIES[ckey]["laeq_range"], step=5.0) if "laeq" in state[eid] else random.uniform(55, 80)
 
-                    payload = make_noise_payload(state[city_key]["laeq"])
+                    payload = make_noise_payload(state[eid]["laeq"])
+                    lat, lon = ent["coords"]
                     entity = {
-                        "id": city_cfg["id"],
+                        "id": eid,
                         "type": "NoiseLevelObserved",
+                        "location": {"type": "GeoProperty", "value": {"type": "Point", "coordinates": [lon, lat]}},
                         **payload,
+                        "dateObserved": {"type": "Property", "value": iso_now()},
                         "@context": NGSI_LD_CONTEXT,
                     }
                     try:
-                        status_code = upsert_entity(client, city_cfg["id"], entity, payload)
-                        print(f"[#{i}] {city_cfg['name']} noise upsert OK (HTTP {status_code})")
+                        status_code = upsert_entity(client, eid, entity, payload)
+                        print(f"[#{i}] {ent['city']} {ent['neighborhood']} noise upsert OK {eid} (HTTP {status_code})")
                     except Exception as exc:
-                        print(f"[#{i}] Failed UPSERT {city_cfg['name']} noise: {exc}", file=sys.stderr)
+                        print(f"[#{i}] Failed UPSERT {eid} noise: {exc}", file=sys.stderr)
 
             if i < count:
                 time.sleep(interval)
@@ -183,6 +223,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--orion-url", default="http://localhost:1026", help="Base URL of Orion-LD (default: http://localhost:1026)")
     p.add_argument("--count", type=int, default=20, help="Number of updates to send (default: 20)")
     p.add_argument("--interval", type=float, default=5.0, help="Seconds between updates (default: 5.0)")
+    p.add_argument("--per-neighborhood", type=int, default=2, help="Number of sensors to create per neighborhood (default: 2)")
     # Tenants removed: simulator will not send Fiware-Service headers
     return p.parse_args()
 
@@ -196,6 +237,7 @@ if __name__ == "__main__":
             args.orion_url,
             count=args.count,
             interval=args.interval,
+            per_neighborhood=args.per_neighborhood,
         )
     except KeyboardInterrupt:
         print("Interrupted by user")

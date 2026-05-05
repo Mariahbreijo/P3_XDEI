@@ -9,7 +9,9 @@ La implementación actual opera como una demo FIWARE con estos componentes:
 - Sensores (mock/local) → IoT Agent (opcional) → Orion-LD (http://localhost:1026)
 - QuantumLeap (http://localhost:8668) para series temporales (opcional)
 - Backend FastAPI (http://localhost:8000) que agrega, calcula ICA y actúa como proxy a Orion
-- Frontend estático (http://localhost:3000) que consume `/api/v1/dashboard` y el proxy a Orion
+- Frontend estático (http://localhost:3000) compuesto por módulos ES (vanilla JS) que consumen `/api/v1/dashboard` y usan el proxy a Orion cuando se requiere.
+  - Incluye una **vista avanzada** (Mapa Geoespacial Avanzado) implementada con Leaflet + OpenStreetMap y `Leaflet.markercluster` para clustering dinámico.
+  - La vista avanzada es una vista separada del dashboard principal, optimizada para pantalla completa con controles de filtros, capas (aire/ruido), y popups con datos NGSI-LD en vivo.
 
 ## Componentes e integraciones
 
