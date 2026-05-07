@@ -23,7 +23,47 @@ const uiState = {
   markers: new Map(),
 };
 
+const viewState = {
+  activeView: "main",
+};
+
 const $ = (selector) => document.querySelector(selector);
+
+function setActiveView(viewName) {
+  const nextView = viewName === "advanced" ? "advanced" : "main";
+  const changed = viewState.activeView !== nextView;
+  viewState.activeView = nextView;
+  document.body.dataset.activeView = nextView;
+
+  document.querySelectorAll("[data-view-target]").forEach((button) => {
+    const isActive = button.dataset.viewTarget === nextView;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+
+  if (changed) {
+    window.dispatchEvent(
+      new CustomEvent("fiware:view-changed", {
+        detail: { view: nextView },
+      })
+    );
+  }
+
+  if (nextView === "advanced") {
+    if (typeof window.initAdvancedMap === "function") {
+      window.initAdvancedMap();
+    }
+    if (typeof window.resizeAdvancedMap === "function") {
+      window.resizeAdvancedMap();
+    }
+  }
+}
+
+function bindViewNavigation() {
+  document.querySelectorAll("[data-view-target]").forEach((button) => {
+    button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
+  });
+}
 
 function findAttribute(entity, candidates) {
   if (!entity) return undefined;
@@ -588,9 +628,22 @@ function updateUI() {
   renderMap(normalizedModel);
   renderRanking(normalizedModel);
   renderSelectedCity(normalizedModel);
+
+  window.dispatchEvent(
+    new CustomEvent("fiware:selected-city-changed", {
+      detail: {
+        city: appState.selectedCity,
+        model: normalizedModel,
+      },
+    })
+  );
 }
 
 async function bootstrap() {
+  document.body.dataset.activeView = document.body.dataset.activeView || "main";
+  bindViewNavigation();
+  setActiveView(document.body.dataset.activeView);
+
   setLoadingState("Cargando datos de Orion...");
   appState.entities = await fetchEntitiesFromOrion();
 
@@ -642,6 +695,7 @@ window.runDiagnostics = runDiagnostics;
 window.updateUI = updateUI;
 window.setSelectedCity = setSelectedCity;
 window.refreshDashboard = bootstrap;
+window.setActiveView = setActiveView;
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", bootstrap);

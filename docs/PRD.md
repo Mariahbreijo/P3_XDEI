@@ -17,6 +17,14 @@ Crear un **Dashboard geoespacial avanzado** que:
 - Proporcione análisis históricos y predicciones de contaminación
 - Integre un asistente IA que interprete métricas en lenguaje natural
 
+Adicionalmente, la entrega incluye una **vista avanzada independiente** (Mapa Geoespacial Avanzado) con:
+- Mapa Leaflet a pantalla completa usando OpenStreetMap tiles
+- Clustering de sensores con `Leaflet.markercluster` (soporta chunkedLoading, spiderfy, zoomToBounds)
+- Capas temáticas separadas para `aire` y `ruido`, con controles para alternar capas
+- Filtros por ciudad, barrio/zona, tipo de sensor y thresholds (PM10, PM2_5, LAeq)
+- Popups enriquecidos que muestran atributos NGSI-LD en tiempo real y enlaces a historial
+- Consumo directo de Orion-LD (`http://localhost:1026/ngsi-ld/v1/entities?local=true`) usando cabeceras FIWARE (`Fiware-Service: air_noise`, `Fiware-ServicePath: /`)
+
 ### Casos de Uso Primarios
 1. **Ciudadano**: Consultar calidad del aire y ruido en su zona (app web responsiva)
 2. **Administración**: Monitorizar contaminación en tiempo real y tomar medidas preventivas

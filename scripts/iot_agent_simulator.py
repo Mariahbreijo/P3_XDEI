@@ -33,174 +33,102 @@ FIWARE_SERVICE_PATH = "/"
 API_KEY = "iot-agent-api-key-prod"
 DEVICE_TRANSPORT = "HTTP"
 
-# Definición de dispositivos (sensores) - Configuración para provisioning
-DEVICES_CONFIG = {
-    # ===== MADRID =====
-    "air-sensor-madrid": {
-        "entity_id": "urn:ngsi-ld:AirQualityObserved:ES-Madrid-01",
-        "entity_type": "AirQualityObserved",
-        "service_path": "/",
-        "attributes": {
-            "pm10": {"init": 65.4, "min": 30, "max": 90, "step": 3},
-            "pm25": {"init": 28.5, "min": 10, "max": 60, "step": 2},
-            "no2": {"init": 89.5, "min": 40, "max": 150, "step": 5},
-            "o3": {"init": 62.8, "min": 20, "max": 100, "step": 3},
-            "temperature": {"init": 22.5, "min": 15, "max": 30, "step": 1},
-            "humidity": {"init": 65.0, "min": 40, "max": 90, "step": 2},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Plaza Mayor", "addressLocality": "Madrid", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [-3.7038, 40.4168]}},
-        },
+# Build DEVICES_CONFIG dynamically to create multiple sensors per city/neighborhood
+SENSORS_PER_NEIGHBORHOOD = 2
+
+# City definitions: center coords (lat, lon), neighborhoods and attribute ranges
+CITY_DEFS = {
+    "madrid": {
+        "name": "Madrid",
+        "center": (40.4168, -3.7038),
+        "neighborhoods": ["Centro", "Norte", "Sur"],
+        "type": "air",
+        "air_ranges": {"pm10": (30, 90), "pm25": (10, 60), "no2": (40, 150)}
     },
-    "noise-sensor-madrid": {
-        "entity_id": "urn:ngsi-ld:NoiseLevelObserved:ES-Madrid-01",
-        "entity_type": "NoiseLevelObserved",
-        "service_path": "/",
-        "attributes": {
-            "laeq": {"init": 72.5, "min": 55, "max": 85, "step": 2},
-            "lamax": {"init": 85.2, "min": 70, "max": 100, "step": 3},
-            "la90": {"init": 68.3, "min": 50, "max": 80, "step": 2},
-            "temperature": {"init": 22.5, "min": 15, "max": 30, "step": 1},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Plaza Mayor", "addressLocality": "Madrid", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [-3.7038, 40.4168]}},
-        },
+    "barcelona": {
+        "name": "Barcelona",
+        "center": (41.3851, 2.1734),
+        "neighborhoods": ["Centro", "Norte", "Sur"],
+        "type": "noise",
+        "noise_ranges": {"laeq": (50, 80)}
     },
-    # ===== BARCELONA =====
-    "air-sensor-barcelona": {
-        "entity_id": "urn:ngsi-ld:AirQualityObserved:ES-Barcelona-01",
-        "entity_type": "AirQualityObserved",
-        "service_path": "/",
-        "attributes": {
-            "pm10": {"init": 45.2, "min": 20, "max": 80, "step": 2},
-            "pm25": {"init": 20.1, "min": 8, "max": 50, "step": 2},
-            "no2": {"init": 55.3, "min": 30, "max": 120, "step": 4},
-            "o3": {"init": 58.9, "min": 18, "max": 95, "step": 3},
-            "temperature": {"init": 20.3, "min": 14, "max": 28, "step": 1},
-            "humidity": {"init": 72.5, "min": 50, "max": 85, "step": 2},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Sagrada Familia", "addressLocality": "Barcelona", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [2.1744, 41.4036]}},
-        },
+    "corunna": {
+        "name": "A Coruña",
+        "center": (43.3623, -8.4115),
+        "neighborhoods": ["Centro", "Ensanche"],
+        "type": "air",
+        "air_ranges": {"pm10": (15, 75), "pm25": (5, 45), "no2": (25, 110)}
     },
-    "noise-sensor-barcelona": {
-        "entity_id": "urn:ngsi-ld:NoiseLevelObserved:ES-Barcelona-05",
-        "entity_type": "NoiseLevelObserved",
-        "service_path": "/",
-        "attributes": {
-            "laeq": {"init": 68.7, "min": 50, "max": 80, "step": 2},
-            "lamax": {"init": 81.4, "min": 65, "max": 95, "step": 3},
-            "la90": {"init": 63.2, "min": 45, "max": 75, "step": 2},
-            "temperature": {"init": 20.3, "min": 14, "max": 28, "step": 1},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Sagrada Familia", "addressLocality": "Barcelona", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [2.1744, 41.4036]}},
-        },
+    "alicante": {
+        "name": "Alicante",
+        "center": (38.3452, -0.4810),
+        "neighborhoods": ["Centro", "Playa"],
+        "type": "noise",
+        "noise_ranges": {"laeq": (52, 82)}
     },
-    # ===== A CORUÑA =====
-    "air-sensor-corunna": {
-        "entity_id": "urn:ngsi-ld:AirQualityObserved:ES-Corunna-01",
-        "entity_type": "AirQualityObserved",
-        "service_path": "/",
-        "attributes": {
-            "pm10": {"init": 42.5, "min": 15, "max": 75, "step": 2},
-            "pm25": {"init": 18.3, "min": 5, "max": 45, "step": 1.5},
-            "no2": {"init": 52.1, "min": 25, "max": 110, "step": 4},
-            "o3": {"init": 55.4, "min": 15, "max": 90, "step": 3},
-            "temperature": {"init": 18.2, "min": 10, "max": 25, "step": 1},
-            "humidity": {"init": 78.5, "min": 60, "max": 95, "step": 2},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Torre de Hércules", "addressLocality": "A Coruña", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [-8.3838, 43.3623]}},
-        },
-    },
-    "noise-sensor-corunna": {
-        "entity_id": "urn:ngsi-ld:NoiseLevelObserved:ES-Corunna-01",
-        "entity_type": "NoiseLevelObserved",
-        "service_path": "/",
-        "attributes": {
-            "laeq": {"init": 65.2, "min": 48, "max": 78, "step": 1.5},
-            "lamax": {"init": 78.5, "min": 60, "max": 92, "step": 2},
-            "la90": {"init": 60.1, "min": 40, "max": 72, "step": 1.5},
-            "temperature": {"init": 18.2, "min": 10, "max": 25, "step": 1},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Torre de Hércules", "addressLocality": "A Coruña", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [-8.3838, 43.3623]}},
-        },
-    },
-    # ===== ALICANTE =====
-    "air-sensor-alicante": {
-        "entity_id": "urn:ngsi-ld:AirQualityObserved:ES-Alicante-01",
-        "entity_type": "AirQualityObserved",
-        "service_path": "/",
-        "attributes": {
-            "pm10": {"init": 58.7, "min": 25, "max": 85, "step": 2.5},
-            "pm25": {"init": 25.4, "min": 10, "max": 55, "step": 2},
-            "no2": {"init": 72.3, "min": 35, "max": 135, "step": 4},
-            "o3": {"init": 66.8, "min": 20, "max": 105, "step": 3},
-            "temperature": {"init": 25.1, "min": 18, "max": 32, "step": 1},
-            "humidity": {"init": 68.0, "min": 40, "max": 85, "step": 2},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Barrio del Carmen", "addressLocality": "Alicante", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [-0.4915, 38.3452]}},
-        },
-    },
-    "noise-sensor-alicante": {
-        "entity_id": "urn:ngsi-ld:NoiseLevelObserved:ES-Alicante-01",
-        "entity_type": "NoiseLevelObserved",
-        "service_path": "/",
-        "attributes": {
-            "laeq": {"init": 70.3, "min": 52, "max": 82, "step": 2},
-            "lamax": {"init": 83.8, "min": 68, "max": 98, "step": 3},
-            "la90": {"init": 65.5, "min": 48, "max": 77, "step": 2},
-            "temperature": {"init": 25.1, "min": 18, "max": 32, "step": 1},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Barrio del Carmen", "addressLocality": "Alicante", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [-0.4915, 38.3452]}},
-        },
-    },
-    # ===== BILBAO =====
-    "air-sensor-bilbao": {
-        "entity_id": "urn:ngsi-ld:AirQualityObserved:ES-Bilbao-02",
-        "entity_type": "AirQualityObserved",
-        "service_path": "/",
-        "attributes": {
-            "pm10": {"init": 52.1, "min": 20, "max": 80, "step": 2},
-            "pm25": {"init": 22.5, "min": 8, "max": 50, "step": 1.5},
-            "no2": {"init": 68.4, "min": 32, "max": 130, "step": 4},
-            "o3": {"init": 61.2, "min": 18, "max": 98, "step": 3},
-            "temperature": {"init": 19.8, "min": 12, "max": 27, "step": 1},
-            "humidity": {"init": 75.3, "min": 55, "max": 90, "step": 2},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Casco Viejo", "addressLocality": "Bilbao", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [-2.9385, 43.2627]}},
-        },
-    },
-    "noise-sensor-bilbao": {
-        "entity_id": "urn:ngsi-ld:NoiseLevelObserved:ES-Bilbao-01",
-        "entity_type": "NoiseLevelObserved",
-        "service_path": "/",
-        "attributes": {
-            "laeq": {"init": 69.5, "min": 51, "max": 81, "step": 2},
-            "lamax": {"init": 82.3, "min": 66, "max": 96, "step": 3},
-            "la90": {"init": 64.7, "min": 46, "max": 76, "step": 2},
-            "temperature": {"init": 19.8, "min": 12, "max": 27, "step": 1},
-        },
-        "static_attrs": {
-            "address": {"value": {"streetAddress": "Casco Viejo", "addressLocality": "Bilbao", "addressCountry": "ES"}},
-            "location": {"value": {"type": "Point", "coordinates": [-2.9385, 43.2627]}},
-        },
+    "bilbao": {
+        "name": "Bilbao",
+        "center": (43.2630, -2.9350),
+        "neighborhoods": ["Centro", "Abando"],
+        "type": "air",
+        "air_ranges": {"pm10": (20, 80), "pm25": (8, 50), "no2": (30, 130)}
     },
 }
+
+DEVICES_CONFIG = {}
+for city_key, c in CITY_DEFS.items():
+    lat_c, lon_c = c["center"]
+    for neigh in c["neighborhoods"]:
+        for idx in range(1, SENSORS_PER_NEIGHBORHOOD + 1):
+            base = f"{city_key}-{neigh.replace(' ', '').lower()}-{idx:02d}"
+            if c["type"] == "air":
+                device_id = f"air-sensor-{base}"
+                entity_id = f"urn:ngsi-ld:AirQualityObserved:ES-{c['name'].replace(' ', '')}-{neigh.replace(' ', '')}-{idx:02d}"
+                # jitter location +/- ~0.006 degrees
+                jlat = lat_c + random.uniform(-0.006, 0.006)
+                jlon = lon_c + random.uniform(-0.006, 0.006)
+                jlon_rounded = round(jlon, 6)
+                jlat_rounded = round(jlat, 6)
+                DEVICES_CONFIG[device_id] = {
+                    "entity_id": entity_id,
+                    "entity_type": "AirQualityObserved",
+                    "service_path": "/",
+                    "attributes": {
+                        "pm10": {"init": random.uniform(20, 70), "min": c["air_ranges"]["pm10"][0], "max": c["air_ranges"]["pm10"][1], "step": 3},
+                        "pm25": {"init": random.uniform(5, 35), "min": c["air_ranges"]["pm25"][0], "max": c["air_ranges"]["pm25"][1], "step": 2},
+                        "no2": {"init": random.uniform(30, 120), "min": c["air_ranges"]["no2"][0], "max": c["air_ranges"]["no2"][1], "step": 5},
+                        "o3": {"init": random.uniform(18, 95), "min": 15, "max": 110, "step": 3},
+                        "temperature": {"init": random.uniform(15, 26), "min": 10, "max": 35, "step": 1},
+                        "humidity": {"init": random.uniform(45, 80), "min": 30, "max": 95, "step": 2},
+                    },
+                    "static_attrs": {
+                        "address": {"value": {"streetAddress": neigh, "addressLocality": c["name"], "addressCountry": "ES"}},
+                        "location": {"value": {"type": "Point", "coordinates": [jlon_rounded, jlat_rounded]}},
+                    },
+                }
+            else:
+                device_id = f"noise-sensor-{base}"
+                entity_id = f"urn:ngsi-ld:NoiseLevelObserved:ES-{c['name'].replace(' ', '')}-{neigh.replace(' ', '')}-{idx:02d}"
+                jlat = lat_c + random.uniform(-0.006, 0.006)
+                jlon = lon_c + random.uniform(-0.006, 0.006)
+                jlon_rounded = round(jlon, 6)
+                jlat_rounded = round(jlat, 6)
+                DEVICES_CONFIG[device_id] = {
+                    "entity_id": entity_id,
+                    "entity_type": "NoiseLevelObserved",
+                    "service_path": "/",
+                    "attributes": {
+                        "laeq": {"init": random.uniform(55, 78), "min": c["noise_ranges"]["laeq"][0], "max": c["noise_ranges"]["laeq"][1], "step": 2},
+                        "lamax": {"init": random.uniform(70, 95), "min": 60, "max": 100, "step": 3},
+                        "la90": {"init": random.uniform(45, 75), "min": 40, "max": 80, "step": 2},
+                        "temperature": {"init": random.uniform(15, 26), "min": 10, "max": 35, "step": 1},
+                    },
+                    "static_attrs": {
+                        "address": {"value": {"streetAddress": neigh, "addressLocality": c["name"], "addressCountry": "ES"}},
+                        "location": {"value": {"type": "Point", "coordinates": [jlon_rounded, jlat_rounded]}},
+                    },
+                }
+
 
 # Estado local de sensores (para Brownian motion)
 sensor_state = {}
@@ -433,12 +361,31 @@ def run_simulator(count: int = 20, interval: float = 5.0, continuous: bool = Fal
 
             # Mostrar detalles cada 5 iteraciones
             if iteration % 5 == 0:
-                print(f"  → Madrid Air: PM10={sensor_state['air-sensor-madrid']['pm10']:.1f}, PM2.5={sensor_state['air-sensor-madrid']['pm25']:.1f}, NO2={sensor_state['air-sensor-madrid']['no2']:.1f}")
-                print(f"  → Madrid Noise: LAeq={sensor_state['noise-sensor-madrid']['laeq']:.1f}, LAmax={sensor_state['noise-sensor-madrid']['lamax']:.1f}")
-                print(f"  → Barcelona Air: PM10={sensor_state['air-sensor-barcelona']['pm10']:.1f}, NO2={sensor_state['air-sensor-barcelona']['no2']:.1f}")
-                print(f"  → A Coruña Air: PM10={sensor_state['air-sensor-corunna']['pm10']:.1f}, Temperature={sensor_state['air-sensor-corunna']['temperature']:.1f}°C")
-                print(f"  → Alicante Noise: LAeq={sensor_state['noise-sensor-alicante']['laeq']:.1f} dB")
-                print(f"  → Bilbao Air: PM2.5={sensor_state['air-sensor-bilbao']['pm25']:.1f}, O3={sensor_state['air-sensor-bilbao']['o3']:.1f}")
+                def sample_device(prefix):
+                    for did in sensor_state.keys():
+                        if did.startswith(prefix):
+                            return did
+                    return None
+
+                m_air = sample_device('air-sensor-madrid')
+                m_noise = sample_device('noise-sensor-madrid')
+                b_air = sample_device('air-sensor-barcelona')
+                c_air = sample_device('air-sensor-corunna')
+                a_noise = sample_device('noise-sensor-alicante')
+                bi_air = sample_device('air-sensor-bilbao')
+
+                if m_air:
+                    print(f"  → Madrid Air: PM10={sensor_state[m_air]['pm10']:.1f}, PM2.5={sensor_state[m_air]['pm25']:.1f}, NO2={sensor_state[m_air]['no2']:.1f}, O3={sensor_state[m_air].get('o3', 0.0):.1f}")
+                if m_noise:
+                    print(f"  → Madrid Noise: LAeq={sensor_state[m_noise]['laeq']:.1f}, LAmax={sensor_state[m_noise]['lamax']:.1f}")
+                if b_air:
+                    print(f"  → Barcelona Air: PM10={sensor_state[b_air]['pm10']:.1f}, NO2={sensor_state[b_air]['no2']:.1f}, O3={sensor_state[b_air].get('o3', 0.0):.1f}")
+                if c_air:
+                    print(f"  → A Coruña Air: PM10={sensor_state[c_air]['pm10']:.1f}, O3={sensor_state[c_air].get('o3', 0.0):.1f}, Temperature={sensor_state[c_air]['temperature']:.1f}°C")
+                if a_noise:
+                    print(f"  → Alicante Noise: LAeq={sensor_state[a_noise]['laeq']:.1f} dB")
+                if bi_air:
+                    print(f"  → Bilbao Air: PM2.5={sensor_state[bi_air]['pm25']:.1f}, O3={sensor_state[bi_air].get('o3', 0.0):.1f}")
 
             if not continuous:
                 if iteration < count:
