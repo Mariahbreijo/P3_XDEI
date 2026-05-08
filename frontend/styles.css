@@ -155,7 +155,8 @@ h1 {
 }
 
 body[data-active-view="main"] .view-main,
-body[data-active-view="advanced"] .view-advanced {
+body[data-active-view="advanced"] .view-advanced,
+body[data-active-view="detail"] .view-detail {
   display: grid;
 }
 
@@ -316,6 +317,42 @@ body[data-active-view="advanced"] .view-advanced {
 
 .view-advanced .panel-advanced {
   overflow: hidden;
+}
+
+.view-detail .panel-detail {
+  overflow: hidden;
+}
+
+.detail-panel-header {
+  align-items: flex-start;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.detail-shell {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.detail-card {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.detail-card h4,
+.detail-card p {
+  margin: 0;
+}
+
+.detail-card p + p,
+.detail-card p + h4 {
+  margin-top: 8px;
 }
 
 .advanced-panel-header {
@@ -491,7 +528,8 @@ body[data-active-view="advanced"] .view-advanced {
   .hero-card,
   .dashboard-grid,
   .charts-grid,
-  .advanced-shell {
+  .advanced-shell,
+  .detail-shell {
     grid-template-columns: 1fr;
   }
 

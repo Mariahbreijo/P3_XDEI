@@ -23,6 +23,7 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
     <script type="module" src="./app_fiware_sync.js?v=20260505a"></script>
     <script type="module" src="./advanced_map.js?v=20260505a"></script>
+    <script type="module" src="./sensor_detail.js?v=20260508b"></script>
   </head>
   <body data-active-view="main">
     <div class="backdrop"></div>
@@ -35,6 +36,7 @@
         <nav class="topnav" aria-label="Navegación principal">
           <button class="topnav-tab is-active" type="button" data-view-target="main">Panel principal</button>
           <button class="topnav-tab" type="button" data-view-target="advanced">Mapa avanzado</button>
+          <button class="topnav-tab" type="button" data-view-target="detail">Detalle sensor</button>
         </nav>
         <div class="topbar-pills">
           <span class="pill">Orion-LD Ready</span>
@@ -194,6 +196,38 @@
             <div class="advanced-map-viewport">
               <div id="advanced-map"></div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view view-detail" data-view="detail" id="sensor-detail-section">
+        <div class="panel panel-detail">
+          <div class="panel-header detail-panel-header">
+            <div>
+              <p class="label">Vista de sensor</p>
+              <h3>Detalle de sensor</h3>
+              <p class="lead">Información básica del sensor seleccionado.</p>
+            </div>
+            <div class="detail-actions">
+              <button class="ghost-button" id="detail-back-to-map" type="button">Volver al mapa</button>
+            </div>
+          </div>
+
+          <div class="detail-shell">
+            <article class="detail-card">
+              <p class="label">Nombre</p>
+              <h4 id="detail-sensor-name">Selecciona un sensor</h4>
+            </article>
+
+            <article class="detail-card">
+              <p class="label">Ciudad</p>
+              <p id="detail-sensor-city">--</p>
+            </article>
+
+            <article class="detail-card">
+              <p class="label">Tipo de sensor</p>
+              <p id="detail-sensor-type">--</p>
+            </article>
           </div>
         </div>
       </section>
