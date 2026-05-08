@@ -1,0 +1,539 @@
+/**
+ * SENSOR DETAIL VIEW - ESTILOS
+ * Vista de detalle avanzada para sensores/zonas
+ */
+
+/* ============================================================================
+   CONTENEDOR PRINCIPAL
+   ============================================================================ */
+
+.sensor-detail-view {
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.btn-back {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+  background: #2980b9;
+  transform: translateX(-3px);
+}
+
+.header-info {
+  flex: 1;
+  min-width: 250px;
+}
+
+.sensor-name {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.sensor-location {
+  margin: 5px 0 10px 0;
+  font-size: 14px;
+  color: #7f8c8d;
+}
+
+.last-update {
+  font-size: 12px;
+  color: #95a5a6;
+}
+
+.status-badge {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: center;
+  min-width: 150px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================================================
+   SECCIÓN DE KPIs
+   ============================================================================ */
+
+.kpis-section {
+  margin-bottom: 30px;
+}
+
+.kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 15px;
+}
+
+.kpi-card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: all 0.3s ease;
+  border-top: 3px solid #ecf0f1;
+}
+
+.kpi-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.kpi-card.main-ica {
+  grid-column: auto;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 700;
+}
+
+.kpi-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  color: #7f8c8d;
+  margin-bottom: 8px;
+}
+
+.kpi-card.main-ica .kpi-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.kpi-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 10px 0;
+}
+
+.kpi-card.main-ica .kpi-value {
+  color: white;
+}
+
+.kpi-unit {
+  font-size: 12px;
+  color: #95a5a6;
+  margin-bottom: 8px;
+}
+
+.kpi-card.main-ica .kpi-unit {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.kpi-reference {
+  font-size: 11px;
+  color: #bdc3c7;
+  border-top: 1px solid #ecf0f1;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.kpi-card.main-ica .kpi-reference {
+  border-top-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================================================
+   SECCIÓN DE GRÁFICO
+   ============================================================================ */
+
+.chart-section {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #2c3e50;
+}
+
+.selector-group {
+  display: flex;
+  gap: 10px;
+}
+
+.selector-group select {
+  padding: 10px 15px;
+  border: 2px solid #ecf0f1;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.selector-group select:hover,
+.selector-group select:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+#sensorDetailChart {
+  display: block;
+  margin: 0 auto;
+}
+
+/* ============================================================================
+   SECCIÓN DÍA MÁS PERJUDICIAL
+   ============================================================================ */
+
+.worst-day-section {
+  margin-bottom: 30px;
+}
+
+.worst-day-card {
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.worst-day-card:hover {
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.worst-day-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.worst-day-severity {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.worst-day-index {
+  font-size: 14px;
+  margin-bottom: 10px;
+  opacity: 0.9;
+}
+
+.worst-day-metrics {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid currentColor;
+  opacity: 0.7;
+}
+
+/* ============================================================================
+   SECCIÓN DE ALERTAS
+   ============================================================================ */
+
+.alerts-section {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.alerts-section h2 {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  color: #2c3e50;
+}
+
+.alerts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.alert-card {
+  padding: 20px;
+  border-radius: 10px;
+  display: flex;
+  gap: 15px;
+  transition: all 0.3s ease;
+}
+
+.alert-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos por nivel de alerta */
+.alert-good {
+  background-color: #d5f4e6;
+  border-left: 4px solid #2ecc71;
+}
+
+.alert-caution {
+  background-color: #fef5e7;
+  border-left: 4px solid #f39c12;
+}
+
+.alert-warning {
+  background-color: #fadbd8;
+  border-left: 4px solid #e74c3c;
+}
+
+.alert-icon {
+  font-size: 28px;
+  min-width: 30px;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-pollutant {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.alert-good .alert-pollutant {
+  color: #2ecc71;
+}
+
+.alert-caution .alert-pollutant {
+  color: #f39c12;
+}
+
+.alert-warning .alert-pollutant {
+  color: #e74c3c;
+}
+
+.alert-message {
+  font-size: 13px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.alert-recommendation {
+  font-size: 12px;
+  opacity: 0.85;
+  font-style: italic;
+}
+
+/* ============================================================================
+   SECCIÓN DE RECOMENDACIONES
+   ============================================================================ */
+
+.recommendations-section {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.recommendations-section h2 {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  color: #2c3e50;
+}
+
+.recommendations-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.recommendation-item {
+  padding: 15px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #2c3e50;
+  border-left: 3px solid #3498db;
+  transition: all 0.3s ease;
+}
+
+.recommendation-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================================
+   SECCIÓN DE ESTADÍSTICAS
+   ============================================================================ */
+
+.stats-section {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.stats-section h2 {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  color: #2c3e50;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  color: white;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.9;
+  margin-bottom: 10px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .sensor-detail-view {
+    padding: 15px;
+  }
+
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .status-badge {
+    width: 100%;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .kpis-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .alerts-container {
+    grid-template-columns: 1fr;
+  }
+
+  .recommendations-list {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sensor-name {
+    font-size: 22px;
+  }
+
+  .section-header h2 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sensor-detail-view {
+    padding: 10px;
+  }
+
+  .detail-header {
+    padding: 15px;
+  }
+
+  .btn-back {
+    width: 100%;
+    text-align: center;
+  }
+
+  .kpis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sensor-name {
+    font-size: 18px;
+  }
+
+  .kpi-value {
+    font-size: 24px;
+  }
+}
