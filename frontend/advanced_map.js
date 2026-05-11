@@ -250,6 +250,9 @@ function buildAirLayer(sensor, selectedCity) {
     if (typeof window.setSelectedCity === "function") {
       window.setSelectedCity(sensor.city);
     }
+    if (typeof window.openSensorDetail === "function") {
+      window.openSensorDetail(sensor);
+    }
   });
   marker.on("mouseover", () => marker.openTooltip());
   marker.on("mouseout", () => marker.closeTooltip());
@@ -274,6 +277,9 @@ function buildNoiseLayer(sensor, selectedCity) {
   marker.on("click", () => {
     if (typeof window.setSelectedCity === "function") {
       window.setSelectedCity(sensor.city);
+    }
+    if (typeof window.openSensorDetail === "function") {
+      window.openSensorDetail(sensor);
     }
   });
   marker.on("mouseover", () => marker.openTooltip());

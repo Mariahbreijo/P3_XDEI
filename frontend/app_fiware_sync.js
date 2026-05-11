@@ -13,6 +13,7 @@ const BACKEND_URL = "http://localhost:8000";
 const appState = {
   entities: [],
   selectedCity: null,
+  selectedSensor: null,
 };
 
 window.appState = appState;
@@ -30,7 +31,7 @@ const viewState = {
 const $ = (selector) => document.querySelector(selector);
 
 function setActiveView(viewName) {
-  const nextView = viewName === "advanced" ? "advanced" : "main";
+  const nextView = viewName === "advanced" || viewName === "detail" ? viewName : "main";
   const changed = viewState.activeView !== nextView;
   viewState.activeView = nextView;
   document.body.dataset.activeView = nextView;
@@ -389,6 +390,28 @@ function setSelectedCity(cityName) {
   updateUI();
 }
 
+function setSelectedSensor(sensor) {
+  appState.selectedSensor = sensor ? { ...sensor } : null;
+  window.dispatchEvent(
+    new CustomEvent("fiware:selected-sensor-changed", {
+      detail: { sensor: appState.selectedSensor },
+    })
+  );
+}
+
+function openSensorDetail(sensor) {
+  if (!sensor) return;
+  if (sensor.city) {
+    setSelectedCity(sensor.city);
+  }
+  setSelectedSensor(sensor);
+  setActiveView("detail");
+
+  if (typeof window.renderSensorDetail === "function") {
+    window.renderSensorDetail();
+  }
+}
+
 function ensureMap() {
   if (uiState.map) return uiState.map;
 
@@ -649,6 +672,7 @@ async function bootstrap() {
 
   if (!appState.entities.length) {
     appState.selectedCity = null;
+    appState.selectedSensor = null;
     const emptyModel = {
       cities: [],
       global: emptyCitySummary("Promedio global"),
@@ -694,6 +718,8 @@ async function runDiagnostics() {
 window.runDiagnostics = runDiagnostics;
 window.updateUI = updateUI;
 window.setSelectedCity = setSelectedCity;
+window.setSelectedSensor = setSelectedSensor;
+window.openSensorDetail = openSensorDetail;
 window.refreshDashboard = bootstrap;
 window.setActiveView = setActiveView;
 

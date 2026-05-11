@@ -84,6 +84,25 @@ NoiseLevelObserved ejemplo:
 - Cuando se devuelven entidades desde el backend, se incluye `airQualityIndex` y `airQualityLevel` calculados localmente si no existen en Orion.
 - Identificadores de sensor en el store local usan claves legibles (`madrid-air-01`, `barcelona-noise-05`) que se resuelven a URNs por `OrionService.resolve_entity_id()`.
 
+### Frontend: `selectedSensor` (estado temporal)
+
+El frontend mantiene un objeto `selectedSensor` en `window.appState` para facilitar la navegación hacia la vista detalle sin requerir inmediatamente una nueva consulta al backend. Estructura típica (sintética) usada por la UI:
+
+```json
+{
+  "id": "urn:ngsi-ld:AirQualityObserved:ES-Madrid-01",
+  "city": "Madrid",
+  "category": "air",            // "air" | "noise"
+  "coordinates": { "lat": 40.4168, "lon": -3.7038 },
+  "values": { "pm25": 28.5, "pm10": 65.4, "no2": 89.5 },
+  "source": { /* raw NGSI-LD entity if needed */ }
+}
+```
+
+Notas:
+- `selectedSensor` es un estado UI — la fuente de verdad sigue siendo Orion/Backend para datos históricos o consultas detalladas.
+- El módulo `sensor_detail.js` consume `selectedSensor` para renderizar nombre, ciudad y tipo de sensor; puede solicitar históricos posteriormente usando `/api/v1/air-quality/{sensor_id}` o el proxy a Orion.
+
 ---
 
 Si se desea que este documento sea compatible con un catálogo Smart Data Models público, la siguiente iteración añadirá enlaces a las especificaciones oficiales y normalizará nombres de atributos (por ejemplo `pm25` vs `PM2_5`).

@@ -25,6 +25,14 @@ Adicionalmente, la entrega incluye una **vista avanzada independiente** (Mapa Ge
 - Popups enriquecidos que muestran atributos NGSI-LD en tiempo real y enlaces a historial
 - Consumo directo de Orion-LD (`http://localhost:1026/ngsi-ld/v1/entities?local=true`) usando cabeceras FIWARE (`Fiware-Service: air_noise`, `Fiware-ServicePath: /`)
 
+Además de las vistas anteriores, la aplicación incorpora una nueva **vista independiente — "Detalle de sensor"** accesible desde el Mapa Avanzado. Resumen funcional:
+
+- Objetivo: mostrar información focalizada de un sensor seleccionado (nombre, ciudad, tipo) y dar acceso rápido al histórico en pantallas futuras.
+- Acceso: al hacer click en un marcador desde la vista Mapa Avanzado se invoca una función local `openSensorDetail(sensor)` que actualiza el estado `selectedSensor` y navega a la vista `detail`.
+- Render: el módulo frontend `sensor_detail.js` expone `window.renderSensorDetail()` para poblar la vista con los datos del `selectedSensor`.
+
+Este cambio mantiene el enfoque modular del frontend (vistas separadas) y evita introducir dependencias en el backend: la recuperación adicional de históricos seguirá siendo opcional vía `QuantumLeap` o llamadas a `GET /api/v1/air-quality/{sensor_id}` si se requiere.
+
 ### Casos de Uso Primarios
 1. **Ciudadano**: Consultar calidad del aire y ruido en su zona (app web responsiva)
 2. **Administración**: Monitorizar contaminación en tiempo real y tomar medidas preventivas

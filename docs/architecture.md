@@ -13,6 +13,20 @@ La implementación actual opera como una demo FIWARE con estos componentes:
   - Incluye una **vista avanzada** (Mapa Geoespacial Avanzado) implementada con Leaflet + OpenStreetMap y `Leaflet.markercluster` para clustering dinámico.
   - La vista avanzada es una vista separada del dashboard principal, optimizada para pantalla completa con controles de filtros, capas (aire/ruido), y popups con datos NGSI-LD en vivo.
 
+### Frontend: eventos y nueva vista "Detalle de sensor"
+
+- El frontend sigue un patrón orientado a vistas (`main`, `advanced`, `detail`) controlado por `viewState.activeView` y `document.body.dataset.activeView`.
+- Se introdujo una vista adicional `detail` (Detalle de sensor) que se abre desde el Mapa Avanzado cuando el usuario hace click en un marcador.
+- Estado global: `window.appState` contiene ahora `entities`, `selectedCity` y `selectedSensor` (objeto con campos relevantes del sensor). El `selectedSensor` sirve para poblar la vista detalle sin necesidad de nueva consulta inmediata.
+- API cliente/DOM:
+  - `openSensorDetail(sensor)`: helper expuesto en `window` por el controlador principal (`app_fiware_sync.js`). Actualiza `selectedCity` (si aplica), guarda `selectedSensor`, cambia la vista a `detail` y llama a `window.renderSensorDetail()` si está disponible.
+  - `sensor_detail.js`: módulo responsable de renderizar la vista detalle; expone `window.renderSensorDetail` y se suscribe a los eventos `fiware:selected-sensor-changed` y `fiware:view-changed` para actualizar su UI.
+- Eventos personalizados:
+  - `fiware:view-changed` — notifica cambios de vista (`detail`, `advanced`, `main`).
+  - `fiware:selected-sensor-changed` — notifica cambios en la selección de sensor y es usado por `sensor_detail.js` para refrescar la UI.
+
+Este diseño mantiene el mapa y el dashboard sin acoplamientos fuertes: el Mapa solo invoca un helper público y el módulo detalle se encarga de consumir el estado global.
+
 ## Componentes e integraciones
 
 - Backend (FastAPI): expone endpoints en `/api/v1`:
