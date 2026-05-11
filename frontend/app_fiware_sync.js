@@ -29,6 +29,23 @@ const viewState = {
 };
 
 const $ = (selector) => document.querySelector(selector);
+const i18n = () => window.appI18n;
+
+function t(key, params = {}) {
+  return i18n()?.t?.(key, params) ?? key;
+}
+
+function translateAirLevel(code) {
+  return i18n()?.translateAirLevel?.(code) ?? code ?? t("status.noData");
+}
+
+function translateNoiseLevel(code) {
+  return i18n()?.translateNoiseLevel?.(code) ?? code ?? t("status.noData");
+}
+
+function translateGeneralLevel(code) {
+  return i18n()?.translateGeneralLevel?.(code) ?? code ?? t("status.noData");
+}
 
 function setActiveView(viewName) {
   const nextView = viewName === "advanced" || viewName === "detail" ? viewName : "main";
@@ -165,10 +182,10 @@ function statusLabelFromScores(airLevel, noiseLevel) {
     { QUIET: 0, MODERATE: 1, LOUD: 2, VERY_LOUD: 3 }[noiseLevel] ?? 0
   );
 
-  if (severity === 0) return "Bueno";
-  if (severity === 1) return "Moderado";
-  if (severity === 2) return "Malo";
-  return "Crítico";
+  if (severity === 0) return translateGeneralLevel("GOOD");
+  if (severity === 1) return translateGeneralLevel("MODERATE");
+  if (severity === 2) return translateGeneralLevel("POOR");
+  return translateGeneralLevel("VERY_POOR");
 }
 
 function emptyCitySummary(name) {
@@ -468,15 +485,15 @@ function renderKPIs(model) {
   const generalDetail = $("#general-detail");
 
   if (airIndex) airIndex.textContent = focus.ica != null ? Math.round(focus.ica).toString() : "--";
-  if (airStatus) airStatus.textContent = focus.airLevel || "Sin datos";
+  if (airStatus) airStatus.textContent = translateAirLevel(focus.airLevel);
   if (noiseIndex) noiseIndex.textContent = focus.noiseLevelDb != null ? `${focus.noiseLevelDb.toFixed(1)} dB` : "-- dB";
-  if (noiseStatus) noiseStatus.textContent = focus.noiseLevel || "Sin datos";
-  if (generalStatus) generalStatus.textContent = focus.overallLabel || "Sin datos";
+  if (noiseStatus) noiseStatus.textContent = translateNoiseLevel(focus.noiseLevel);
+  if (generalStatus) generalStatus.textContent = focus.overallLabel || t("status.noData");
   if (generalDetail) {
     generalDetail.textContent =
       focus.name === "Promedio global"
-        ? "Vista agregada de todas las ciudades detectadas en Orion-LD."
-        : `Ciudad activa: ${focus.name}`;
+        ? t("status.globalView")
+        : `${t("status.activeCityPrefix")}: ${focus.name}`;
   }
 }
 
@@ -538,19 +555,19 @@ function renderRanking(model) {
   if (cleanestCard) {
     cleanestCard.innerHTML = model.cleanest
       ? `<strong>${model.cleanest.name}</strong><span>ICA ${Math.round(model.cleanest.ica ?? 0)}</span>`
-      : `<strong>Sin datos</strong><span>Esperando Orion</span>`;
+      : `<strong>${t("status.noData")}</strong><span>${t("status.waitingOrion")}</span>`;
   }
 
   if (dirtiestCard) {
     dirtiestCard.innerHTML = model.dirtiest
       ? `<strong>${model.dirtiest.name}</strong><span>ICA ${Math.round(model.dirtiest.ica ?? 0)}</span>`
-      : `<strong>Sin datos</strong><span>Esperando Orion</span>`;
+      : `<strong>${t("status.noData")}</strong><span>${t("status.waitingOrion")}</span>`;
   }
 
   if (!rankingList) return;
 
   if (model.cities.length === 0) {
-    rankingList.innerHTML = '<li class="ranking-empty">No hay ciudades con entidades NGSI-LD parseables.</li>';
+    rankingList.innerHTML = `<li class="ranking-empty">${t("status.noCities")}</li>`;
     return;
   }
 
@@ -558,8 +575,8 @@ function renderRanking(model) {
   rankingList.innerHTML = model.cities
     .map((city, index) => {
       const selectedClass = city.name === selectedCity ? "ranking-item selected" : "ranking-item";
-      const airText = city.ica != null ? `ICA ${Math.round(city.ica)}` : "Sin aire";
-      const noiseText = city.noiseLevelDb != null ? `${city.noiseLevelDb.toFixed(1)} dB` : "Sin ruido";
+      const airText = city.ica != null ? `ICA ${Math.round(city.ica)}` : t("status.noData");
+      const noiseText = city.noiseLevelDb != null ? `${city.noiseLevelDb.toFixed(1)} dB` : t("status.noData");
       return `
         <button class="${selectedClass}" data-city="${city.name}" type="button">
           <span class="ranking-rank">${index + 1}</span>
@@ -584,7 +601,7 @@ function renderSelectedCity(model) {
 
   const city = model.selected || model.global;
   if (!city) {
-    container.innerHTML = '<p class="empty-state">No hay datos para mostrar.</p>';
+    container.innerHTML = `<p class="empty-state">${t("status.noContent")}</p>`;
     return;
   }
 
@@ -594,29 +611,29 @@ function renderSelectedCity(model) {
   container.innerHTML = `
     <article class="selected-summary">
       <div>
-        <p class="label">Ciudad activa</p>
+        <p class="label">${t("labels.activeCity")}</p>
         <h3>${city.name}</h3>
       </div>
       <div class="selected-grid">
         <div class="selected-stat">
-          <span>ICA</span>
+          <span>${t("labels.airIndex")}</span>
           <strong>${city.ica != null ? Math.round(city.ica) : "--"}</strong>
-          <small>${city.airLevel || "Sin datos"}</small>
+          <small>${translateAirLevel(city.airLevel)}</small>
         </div>
         <div class="selected-stat">
-          <span>Ruido medio</span>
+          <span>${t("labels.noiseAverage")}</span>
           <strong>${city.noiseLevelDb != null ? `${city.noiseLevelDb.toFixed(1)} dB` : "--"}</strong>
-          <small>${city.noiseLevel || "Sin datos"}</small>
+          <small>${translateNoiseLevel(city.noiseLevel)}</small>
         </div>
         <div class="selected-stat">
-          <span>Estado general</span>
+          <span>${t("labels.generalStatus")}</span>
           <strong>${city.overallLabel || "--"}</strong>
-          <small>${city.airCount} aire · ${city.noiseCount} ruido</small>
+          <small>${city.airCount} ${t("labels.airQuality")} · ${city.noiseCount} ${t("labels.urbanNoise")}</small>
         </div>
       </div>
       <div class="selected-metrics">
         <div>
-          <p class="metric-title">Calidad del aire</p>
+          <p class="metric-title">${t("labels.airQuality")}</p>
           <ul>
             <li><span>PM10</span><strong>${formatNumber(air?.PM10)}</strong></li>
             <li><span>PM2_5</span><strong>${formatNumber(air?.PM2_5)}</strong></li>
@@ -625,7 +642,7 @@ function renderSelectedCity(model) {
           </ul>
         </div>
         <div>
-          <p class="metric-title">Ruido urbano</p>
+          <p class="metric-title">${t("labels.urbanNoise")}</p>
           <ul>
             <li><span>LAeq</span><strong>${formatNumber(noise?.LAeq)}</strong></li>
             <li><span>LAmax</span><strong>${formatNumber(noise?.LAmax)}</strong></li>
@@ -667,7 +684,7 @@ async function bootstrap() {
   bindViewNavigation();
   setActiveView(document.body.dataset.activeView);
 
-  setLoadingState("Cargando datos de Orion...");
+  setLoadingState(t("status.loadingOrion"));
   appState.entities = await fetchEntitiesFromOrion();
 
   if (!appState.entities.length) {
@@ -690,6 +707,14 @@ async function bootstrap() {
   appState.selectedCity = resolveDefaultCity(aggregateCitySummaries(appState.entities));
   updateUI();
 }
+
+window.addEventListener("fiware:locale-changed", () => {
+  if (appState.entities.length) {
+    updateUI();
+  } else {
+    setLoadingState(t("status.loadingOrion"));
+  }
+});
 
 async function runDiagnostics() {
   console.log("\n" + "=".repeat(80));

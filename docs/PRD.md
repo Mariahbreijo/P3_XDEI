@@ -1,7 +1,7 @@
 # PRD: Product Requirements Document
 ## Aplicación FIWARE de Monitorización de Calidad del Aire y Ruido Urbano
 
-### Versión: 1.1 | Fecha: 11-05-2026
+### Versión: 1.2 | Fecha: 11-05-2026
 
 ---
 
@@ -36,13 +36,20 @@ Este cambio mantiene el enfoque modular del frontend (vistas separadas) y evita 
 La vista `Detalle de sensor` se ha ampliado con capacidades analíticas y de salud pública:
 
 - KPIs dinámicos por tipo de sensor (`AirQualityObserved` y `NoiseLevelObserved`) con fallback `N/D`.
-- Simulación de histórico semanal local (`Lunes` a `Domingo`) para continuidad visual cuando no hay histórico remoto.
+- Simulación de histórico semanal local con etiquetas de día localizadas en español o inglés según el idioma activo.
 - Gráfica semanal con `Chart.js` (multiserie, hover interactivo, animaciones y diseño responsive).
 - Tarjeta de `Día más perjudicial` con nivel de riesgo destacado.
 - Sistema de alertas OMS visual (`safe`, `warning`, `danger`) para `PM2.5`, `PM10`, `NO2`, `O3` y `LAeq`.
 - Recomendaciones de salud dinámicas y personalizadas por contexto:
         - Calidad del aire: mascarilla, ventilación, purificador, ejercicio exterior condicionado.
         - Ruido: reducción de exposición, protección auditiva, control de ventanas y descanso acústico.
+
+### Soporte multidioma
+
+- Idiomas soportados: español por defecto e inglés como alternativa en el frontend.
+- El selector de idioma aparece junto al modo claro/oscuro y persiste la preferencia en el navegador.
+- Las etiquetas estáticas del shell, los textos del dashboard, el mapa avanzado y la vista detalle se renderizan en función del idioma activo.
+- Las vistas derivadas, como el histórico semanal y las recomendaciones, regeneran sus etiquetas cuando cambia el idioma.
 
 ### Casos de Uso Primarios
 1. **Ciudadano**: Consultar calidad del aire y ruido en su zona (app web responsiva)
@@ -61,6 +68,7 @@ La vista `Detalle de sensor` se ha ampliado con capacidades analíticas y de sal
 - La tipografía del título usa ahora la familia `Rubik` y un estilo con gradiente para mejorar presencia visual.
 - El `topnav` se hizo más prominente; el botón directo "Detalle sensor" fue retirado del topbar (la vista `detail` permanece accesible desde el mapa).
 - El conmutador de tema muestra emoji (☀️/🌙) y se corrigieron contrastes en modo oscuro.
+- Se añadió un selector de idioma junto al conmutador de tema para alternar entre español e inglés sin recargar la aplicación.
 - El mapa avanzado centra por defecto en España (`setView([43.0, -3.7], 5)`) y las tooltips/popups muestran la zona extraída del `id` de la entidad (p. ej. `Madrid-Centro-01`).
 - Se redujo la escala base del UI (`html { font-size: 15px; }`) para mejor ajuste visual en zoom 100%.
 

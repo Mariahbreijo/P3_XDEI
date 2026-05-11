@@ -793,6 +793,10 @@ body[data-active-view="advanced"] .view-advanced {
   border-color: rgba(255, 255, 255, 0.24);
 }
 
+.locale-toggle {
+  min-width: 8.5rem;
+}
+
 .advanced-shell {
   display: grid;
   grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);

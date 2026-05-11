@@ -22,7 +22,8 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
-    <script type="module" src="./app_fiware_sync.js?v=20260505a"></script>
+    <script type="module" src="./i18n.js?v=20260511a"></script>
+    <script type="module" src="./app_fiware_sync.js?v=20260511a"></script>
     <script type="module" src="./advanced_map.js?v=20260505a"></script>
     <script type="module" src="./sensor_detail.js?v=20260508b"></script>
   </head>
@@ -30,20 +31,21 @@
     <div class="backdrop"></div>
     <header class="topbar">
       <div>
-        <p class="eyebrow">FIWARE · NGSI-LD · Smart Data Models</p>
-        <h1>Centro de Monitorización Ambiental</h1>
-        <p class="site-subtitle">Análisis integral de calidad del aire y contaminación acústica</p>
+        <p class="eyebrow" data-i18n="header.eyebrow">FIWARE · NGSI-LD · Smart Data Models</p>
+        <h1 data-i18n="header.title">Centro de Monitorización Ambiental</h1>
+        <p class="site-subtitle" data-i18n="header.subtitle">Análisis integral de calidad del aire y contaminación acústica</p>
       </div>
       <div class="topbar-actions">
         <nav class="topnav" aria-label="Navegación principal">
-          <button class="topnav-tab is-active" type="button" data-view-target="main">Panel principal</button>
-          <button class="topnav-tab" type="button" data-view-target="advanced">Mapa avanzado</button>
+          <button class="topnav-tab is-active" type="button" data-view-target="main" data-i18n="nav.main">Panel principal</button>
+          <button class="topnav-tab" type="button" data-view-target="advanced" data-i18n="nav.advanced">Mapa avanzado</button>
         </nav>
         <button id="theme-toggle" class="ghost-button" type="button" aria-pressed="false" aria-label="Alternar tema">Modo claro</button>
+        <button id="locale-toggle" class="ghost-button locale-toggle" type="button" aria-pressed="false" aria-label="Cambiar idioma">English</button>
         <div class="topbar-pills">
-          <span class="pill">Orion-LD Ready</span>
-          <span class="pill">QuantumLeap</span>
-          <span class="pill">Leaflet + ChartJS</span>
+          <span class="pill" data-i18n="pills.orion">Orion-LD Ready</span>
+          <span class="pill" data-i18n="pills.quantumleap">QuantumLeap</span>
+          <span class="pill" data-i18n="pills.leaflet">Leaflet + ChartJS</span>
         </div>
       </div>
     </header>
@@ -51,25 +53,25 @@
     <main class="layout view view-main" data-view="main">
       <section class="hero-card">
         <div>
-          <p class="label">Panel Inicial</p>
-          <h2>Monitorización urbana en tiempo real</h2>
+          <p class="label" data-i18n="hero.label">Panel Inicial</p>
+          <h2 data-i18n="hero.title">Monitorización urbana en tiempo real</h2>
           <p class="lead">
-            Consulta de un vistazo el estado del aire y del ruido urbano. Las métricas se muestran con palabras sencillas para que cualquier persona pueda entenderlas sin conocimientos técnicos.
+            <span data-i18n="hero.lead">Consulta de un vistazo el estado del aire y del ruido urbano. Las métricas se muestran con palabras sencillas para que cualquier persona pueda entenderlas sin conocimientos técnicos.</span>
           </p>
         </div>
         <div class="hero-metrics">
           <article class="metric metric-good">
-            <span>ICA</span>
+            <span data-i18n="labels.airIndex">ICA</span>
             <strong id="air-index">--</strong>
             <small id="air-status">Cargando...</small>
           </article>
           <article class="metric metric-noise">
-            <span>Ruido medio</span>
+            <span data-i18n="labels.noiseAverage">Ruido medio</span>
             <strong id="noise-index">-- dB</strong>
             <small id="noise-status">Cargando...</small>
           </article>
           <article class="metric metric-general">
-            <span>Estado general</span>
+            <span data-i18n="labels.generalStatus">Estado general</span>
             <strong id="general-status">--</strong>
             <small id="general-detail">--</small>
           </article>
@@ -80,8 +82,8 @@
         <section class="panel panel-map">
           <div class="panel-header">
             <div>
-              <p class="label">Mapa</p>
-              <h3>Ubicación de sensores</h3>
+              <p class="label" data-i18n="labels.map">Mapa</p>
+              <h3 data-i18n="sections.mapTitle">Ubicación de sensores</h3>
             </div>
             <div class="panel-badge">Leaflet / OSM</div>
           </div>
@@ -91,8 +93,8 @@
         <section class="panel panel-ranking">
           <div class="panel-header">
             <div>
-              <p class="label">Ranking</p>
-              <h3>Ciudades ordenadas por ICA</h3>
+              <p class="label" data-i18n="labels.ranking">Ranking</p>
+              <h3 data-i18n="sections.rankingTitle">Ciudades ordenadas por ICA</h3>
             </div>
             <div class="panel-badge">Synced</div>
           </div>
@@ -109,8 +111,8 @@
       <section class="panel panel-selected">
         <div class="panel-header">
           <div>
-            <p class="label">Selección</p>
-            <h3>Detalle de la ciudad activa</h3>
+              <p class="label" data-i18n="labels.selected">Selección</p>
+              <h3 data-i18n="sections.selectedTitle">Detalle de la ciudad activa</h3>
           </div>
           <div class="panel-badge">Mapa + Ranking + KPIs</div>
         </div>
@@ -121,33 +123,33 @@
       <section class="panel panel-guide">
         <div class="panel-header">
           <div>
-            <p class="label">Guía rápida</p>
-            <h3>Qué significa cada métrica</h3>
+              <p class="label" data-i18n="labels.guide">Guía rápida</p>
+            <h3 data-i18n="sections.guideTitle">Qué significa cada métrica</h3>
           </div>
           <div class="panel-badge">Explicación sencilla</div>
         </div>
 
         <div class="guide-grid">
           <article class="info-card info-air metric-guide-card">
-            <h4>Métricas de aire</h4>
-            <p>Estas medidas ayudan a saber si el aire es más limpio o si puede afectar a la salud.</p>
+            <h4 data-i18n="guide.airTitle">Métricas de aire</h4>
+            <p data-i18n="guide.airLead">Estas medidas ayudan a saber si el aire es más limpio o si puede afectar a la salud.</p>
             <ul class="metric-list metric-definition-list">
-              <li><span>ICA</span><span>Índice general que resume la calidad del aire en un número fácil de interpretar.</span></li>
-              <li><span>PM2.5</span><span>Partículas muy pequeñas que pueden llegar profundamente a los pulmones.</span></li>
-              <li><span>PM10</span><span>Partículas un poco más grandes, como polvo o suciedad en suspensión.</span></li>
-              <li><span>NO2</span><span>Gas contaminante relacionado sobre todo con tráfico y combustión.</span></li>
-              <li><span>O3</span><span>Ozono troposférico, que puede aumentar en días soleados y calurosos.</span></li>
+              <li><span data-i18n="guide.air.ica.label">ICA</span><span data-i18n="guide.air.ica.text">Índice general que resume la calidad del aire en un número fácil de interpretar.</span></li>
+              <li><span data-i18n="guide.air.pm25.label">PM2.5</span><span data-i18n="guide.air.pm25.text">Partículas muy pequeñas que pueden llegar profundamente a los pulmones.</span></li>
+              <li><span data-i18n="guide.air.pm10.label">PM10</span><span data-i18n="guide.air.pm10.text">Partículas un poco más grandes, como polvo o suciedad en suspensión.</span></li>
+              <li><span data-i18n="guide.air.no2.label">NO2</span><span data-i18n="guide.air.no2.text">Gas contaminante relacionado sobre todo con tráfico y combustión.</span></li>
+              <li><span data-i18n="guide.air.o3.label">O3</span><span data-i18n="guide.air.o3.text">Ozono troposférico, que puede aumentar en días soleados y calurosos.</span></li>
             </ul>
           </article>
 
           <article class="info-card info-noise metric-guide-card">
-            <h4>Métricas de ruido</h4>
-            <p>Estas medidas describen cuánto ruido hay y cómo cambia a lo largo del tiempo.</p>
+            <h4 data-i18n="guide.noiseTitle">Métricas de ruido</h4>
+            <p data-i18n="guide.noiseLead">Estas medidas describen cuánto ruido hay y cómo cambia a lo largo del tiempo.</p>
             <ul class="metric-list metric-definition-list">
-              <li><span>LAeq</span><span>Nivel medio de ruido en un periodo. Sirve para saber el ruido habitual.</span></li>
-              <li><span>LAmax</span><span>Valor más alto de ruido registrado en ese intervalo.</span></li>
-              <li><span>LA90</span><span>Ruido de fondo: el nivel que se mantiene durante buena parte del tiempo.</span></li>
-              <li><span>dB</span><span>Unidad usada para medir el sonido. Cuanto más sube, más fuerte se percibe.</span></li>
+              <li><span data-i18n="guide.noise.laeq.label">LAeq</span><span data-i18n="guide.noise.laeq.text">Nivel medio de ruido en un periodo. Sirve para saber el ruido habitual.</span></li>
+              <li><span data-i18n="guide.noise.lamax.label">LAmax</span><span data-i18n="guide.noise.lamax.text">Valor más alto de ruido registrado en ese intervalo.</span></li>
+              <li><span data-i18n="guide.noise.la90.label">LA90</span><span data-i18n="guide.noise.la90.text">Ruido de fondo: el nivel que se mantiene durante buena parte del tiempo.</span></li>
+              <li><span data-i18n="guide.noise.db.label">dB</span><span data-i18n="guide.noise.db.text">Unidad usada para medir el sonido. Cuanto más sube, más fuerte se percibe.</span></li>
             </ul>
           </article>
         </div>
@@ -156,10 +158,10 @@
       <section class="panel footer-panel">
         <div class="panel-header">
           <div>
-            <p class="label">Arquitectura</p>
-            <h3>Flujo de datos</h3>
+            <p class="label" data-i18n="labels.architecture">Arquitectura</p>
+            <h3 data-i18n="architecture.title">Flujo de datos</h3>
           </div>
-          <div class="panel-badge">Sensor → IoT Agent → Orion-LD → QuantumLeap → Dashboard</div>
+          <div class="panel-badge" data-i18n="architecture.banner">Sensor → IoT Agent → Orion-LD → QuantumLeap → Dashboard</div>
         </div>
         <pre class="flow-diagram">Sensor IoT  →  IoT Agent  →  Orion-LD  →  QuantumLeap  →  Backend API  →  Dashboard</pre>
       </section>
@@ -169,69 +171,69 @@
         <div class="panel panel-advanced">
           <div class="panel-header advanced-panel-header">
             <div>
-              <p class="label">Sección avanzada</p>
-              <h3>Mapa Geoespacial Avanzado</h3>
+              <p class="label" data-i18n="labels.advancedSection">Sección avanzada</p>
+              <h3 data-i18n="advanced.title">Mapa Geoespacial Avanzado</h3>
               <p class="lead advanced-lead">
-                Vista independiente a pantalla completa con clustering dinámico, capas temáticas de aire y ruido, y filtros conectados a Orion-LD.
+                  <span data-i18n="advanced.lead">Vista independiente a pantalla completa con clustering dinámico, capas temáticas de aire y ruido, y filtros conectados a Orion-LD.</span>
               </p>
             </div>
             <div class="advanced-actions">
-              <button class="ghost-button" id="advanced-map-refresh" type="button">Actualizar Orion</button>
-              <span class="panel-badge" id="advanced-map-status">Cargando sensores...</span>
+                <button class="ghost-button" id="advanced-map-refresh" type="button" data-i18n="advanced.refresh">Actualizar Orion</button>
+                <span class="panel-badge" id="advanced-map-status" data-i18n="advanced.loading">Cargando sensores...</span>
             </div>
           </div>
 
           <div class="advanced-shell">
             <aside class="advanced-sidebar">
               <div class="advanced-sidebar-block">
-                <h4>Filtros</h4>
+                <h4 data-i18n="advanced.filters">Filtros</h4>
                 <label class="field">
-                  <span>Ciudad</span>
+                  <span data-i18n="advanced.city">Ciudad</span>
                   <select id="advanced-filter-city">
-                    <option value="all">Todas</option>
+                    <option value="all" data-i18n-option="advanced.cityAll">Todas</option>
                   </select>
                 </label>
                 <label class="field">
-                  <span>Tipo de sensor</span>
+                  <span data-i18n="advanced.sensorType">Tipo de sensor</span>
                   <select id="advanced-filter-type">
-                    <option value="all">Todos</option>
-                    <option value="air">Calidad del aire</option>
-                    <option value="noise">Ruido urbano</option>
+                    <option value="all" data-i18n-option="advanced.typeAll">Todos</option>
+                    <option value="air" data-i18n-option="advanced.airQuality">Calidad del aire</option>
+                    <option value="noise" data-i18n-option="advanced.noiseUrban">Ruido urbano</option>
                   </select>
                 </label>
                 <label class="field">
-                  <span>PM10 &gt; valor</span>
-                  <input id="advanced-filter-pm10" type="number" min="0" step="0.1" placeholder="Ej. 50" />
+                  <span data-i18n="advanced.pm10Above">PM10 &gt; valor</span>
+                  <input id="advanced-filter-pm10" type="number" min="0" step="0.1" placeholder="Ej. 50" data-i18n-placeholder="advanced.pm10Hint" />
                 </label>
                 <label class="field">
-                  <span>PM2_5 &gt; valor</span>
-                  <input id="advanced-filter-pm25" type="number" min="0" step="0.1" placeholder="Ej. 35" />
+                  <span data-i18n="advanced.pm25Above">PM2_5 &gt; valor</span>
+                  <input id="advanced-filter-pm25" type="number" min="0" step="0.1" placeholder="Ej. 35" data-i18n-placeholder="advanced.pm25Hint" />
                 </label>
                 <label class="field">
-                  <span>LAeq &gt; valor</span>
-                  <input id="advanced-filter-laeq" type="number" min="0" step="0.1" placeholder="Ej. 70" />
+                  <span data-i18n="advanced.laeqAbove">LAeq &gt; valor</span>
+                  <input id="advanced-filter-laeq" type="number" min="0" step="0.1" placeholder="Ej. 70" data-i18n-placeholder="advanced.laeqHint" />
                 </label>
                 <div class="filter-guide" aria-live="polite">
-                  <p><strong>Guía de valores recomendados:</strong></p>
-                  <p>PM10: introduce valores entre 0 y 300 µg/m³ (ejemplo: 50).</p>
-                  <p>PM2_5: introduce valores entre 0 y 200 µg/m³ (ejemplo: 35).</p>
-                  <p>LAeq: introduce valores entre 30 y 120 dB (ejemplo: 70).</p>
+                  <p><strong data-i18n="advanced.recommendedValues">Guía de valores recomendados:</strong></p>
+                  <p data-i18n="advanced.pm10Hint">PM10: introduce valores entre 0 y 300 µg/m³ (ejemplo: 50).</p>
+                  <p data-i18n="advanced.pm25Hint">PM2_5: introduce valores entre 0 y 200 µg/m³ (ejemplo: 35).</p>
+                  <p data-i18n="advanced.laeqHint">LAeq: introduce valores entre 30 y 120 dB (ejemplo: 70).</p>
                 </div>
               </div>
 
               <div class="advanced-sidebar-block">
-                <h4>Capas</h4>
+                <h4 data-i18n="advanced.layers">Capas</h4>
                 <ul class="legend-list">
-                  <li><span class="legend-dot legend-air-good"></span> Aire bueno</li>
-                  <li><span class="legend-dot legend-air-moderate"></span> Aire moderado</li>
-                  <li><span class="legend-dot legend-air-poor"></span> Aire malo</li>
-                  <li><span class="legend-dot legend-air-critical"></span> Aire crítico</li>
-                  <li><span class="legend-dot legend-noise"></span> Ruido urbano</li>
+                  <li><span class="legend-dot legend-air-good"></span> <span data-i18n="advanced.airGood">Aire bueno</span></li>
+                  <li><span class="legend-dot legend-air-moderate"></span> <span data-i18n="advanced.airModerate">Aire moderado</span></li>
+                  <li><span class="legend-dot legend-air-poor"></span> <span data-i18n="advanced.airPoor">Aire malo</span></li>
+                  <li><span class="legend-dot legend-air-critical"></span> <span data-i18n="advanced.airCritical">Aire crítico</span></li>
+                  <li><span class="legend-dot legend-noise"></span> <span data-i18n="advanced.noiseLayer">Ruido urbano</span></li>
                 </ul>
               </div>
 
               <div class="advanced-sidebar-block">
-                <h4>Sincronización</h4>
+                <h4 data-i18n="advanced.sync">Sincronización</h4>
                 <p id="advanced-map-selection" class="sidebar-note">La selección del dashboard se reflejará aquí.</p>
               </div>
             </aside>
@@ -247,28 +249,28 @@
         <div class="panel panel-detail">
           <div class="panel-header detail-panel-header">
             <div>
-              <p class="label">Vista de sensor</p>
-              <h3>Detalle de sensor</h3>
-              <p class="lead">Información básica del sensor seleccionado.</p>
+              <p class="label" data-i18n="labels.detailSection">Vista de sensor</p>
+              <h3 data-i18n="detail.title">Detalle de sensor</h3>
+              <p class="lead" data-i18n="detail.lead">Información básica del sensor seleccionado.</p>
             </div>
             <div class="detail-actions">
-              <button class="ghost-button" id="detail-back-to-map" type="button">Volver al mapa</button>
+              <button class="ghost-button" id="detail-back-to-map" type="button" data-i18n="detail.back">Volver al mapa</button>
             </div>
           </div>
 
           <div class="detail-shell">
             <article class="detail-card">
-              <p class="label">Nombre</p>
-              <h4 id="detail-sensor-name">Selecciona un sensor</h4>
+              <p class="label" data-i18n="labels.sensorName">Nombre</p>
+              <h4 id="detail-sensor-name" data-i18n="status.selectSensor">Selecciona un sensor</h4>
             </article>
 
             <article class="detail-card">
-              <p class="label">Ciudad</p>
+              <p class="label" data-i18n="labels.city">Ciudad</p>
               <p id="detail-sensor-city">--</p>
             </article>
 
             <article class="detail-card">
-              <p class="label">Tipo de sensor</p>
+              <p class="label" data-i18n="labels.sensorType">Tipo de sensor</p>
               <p id="detail-sensor-type">--</p>
             </article>
           </div>
@@ -276,8 +278,8 @@
           <div class="detail-section">
             <div class="detail-section-header">
               <div>
-                <p class="label">KPIs</p>
-                <h4>Indicadores dinámicos</h4>
+                <p class="label" data-i18n="labels.kpis">KPIs</p>
+                <h4 data-i18n="labels.dynamicIndicators">Indicadores dinámicos</h4>
               </div>
             </div>
             <div id="detail-kpi-grid" class="detail-kpi-grid"></div>
@@ -286,8 +288,8 @@
           <div class="detail-section">
             <div class="detail-section-header">
               <div>
-                <p class="label">Semana</p>
-                <h4>Resumen semanal</h4>
+                <p class="label" data-i18n="labels.week">Semana</p>
+                <h4 data-i18n="labels.weeklySummary">Resumen semanal</h4>
               </div>
             </div>
             <div id="detail-weekly-summary" class="detail-weekly-summary"></div>
@@ -309,20 +311,29 @@
   <script>
     (function(){
       const THEME_KEY = 'app_theme';
+      const LOCALE_KEY = 'app_locale';
       const body = document.body;
       const btn = document.getElementById('theme-toggle');
+      const localeBtn = document.getElementById('locale-toggle');
+
+      function syncButtons() {
+        if (window.appI18n && typeof window.appI18n.syncThemeToggle === 'function') {
+          window.appI18n.syncThemeToggle();
+        } else if (btn) {
+          btn.textContent = body.classList.contains('theme-light') ? 'Modo claro' : 'Modo oscuro';
+        }
+
+        if (window.appI18n && typeof window.appI18n.syncLocaleToggle === 'function') {
+          window.appI18n.syncLocaleToggle();
+        } else if (localeBtn) {
+          const savedLocale = localStorage.getItem(LOCALE_KEY) === 'en' ? 'en' : 'es';
+          localeBtn.textContent = savedLocale === 'es' ? 'English' : 'Español';
+        }
+      }
 
       function applyTheme(theme) {
         if (theme === 'light') body.classList.add('theme-light'); else body.classList.remove('theme-light');
-        if (btn) {
-          // Show emoji for current mode: sun for light, moon for dark
-          if (theme === 'light') {
-            btn.textContent = '☀️ Modo claro';
-          } else {
-            btn.textContent = '🌙 Modo oscuro';
-          }
-          btn.setAttribute('aria-pressed', theme === 'light');
-        }
+        syncButtons();
       }
 
       const saved = localStorage.getItem(THEME_KEY);
@@ -336,6 +347,24 @@
           applyTheme(newTheme);
         });
       }
+
+      function bindLocaleButton() {
+        if (!localeBtn || !window.appI18n || typeof window.appI18n.setLocale !== 'function' || localeBtn.dataset.localeBound === 'true') {
+          return;
+        }
+
+        localeBtn.dataset.localeBound = 'true';
+        localeBtn.addEventListener('click', () => {
+          const currentLocale = localStorage.getItem(LOCALE_KEY) === 'en' ? 'en' : 'es';
+          window.appI18n.setLocale(currentLocale === 'es' ? 'en' : 'es');
+          syncButtons();
+        });
+      }
+
+      bindLocaleButton();
+      window.addEventListener('DOMContentLoaded', bindLocaleButton);
+
+      window.addEventListener('fiware:locale-changed', syncButtons);
     })();
   </script>
 </html>
