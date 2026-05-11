@@ -313,7 +313,12 @@
       function applyTheme(theme) {
         if (theme === 'light') body.classList.add('theme-light'); else body.classList.remove('theme-light');
         if (btn) {
-          btn.textContent = theme === 'light' ? 'Modo oscuro' : 'Modo claro';
+          // Show emoji for current mode: sun for light, moon for dark
+          if (theme === 'light') {
+            btn.textContent = '☀️ Modo claro';
+          } else {
+            btn.textContent = '🌙 Modo oscuro';
+          }
           btn.setAttribute('aria-pressed', theme === 'light');
         }
       }
