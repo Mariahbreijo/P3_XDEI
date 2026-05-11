@@ -147,7 +147,7 @@ h1 {
 
 .topnav-tab.is-active {
   background: linear-gradient(180deg, rgba(96,165,250,0.26), rgba(96,165,250,0.12));
-  color: #031027;
+  color: var(--text);
   box-shadow: 0 10px 30px rgba(96,165,250,0.12);
   font-weight: 800;
   border: 1px solid rgba(96,165,250,0.22);
@@ -156,6 +156,11 @@ h1 {
 /* a slightly different look for non-active so pills remain visually separate */
 .topnav .pill-like {
   background: transparent;
+}
+
+/* In light theme, use dark text for the active tab */
+body.theme-light .topnav-tab.is-active {
+  color: #031027;
 }
 
 .topbar-pills {
