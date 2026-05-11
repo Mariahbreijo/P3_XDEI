@@ -888,6 +888,15 @@ body.theme-light .filter-guide {
   box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.26), 0 14px 32px rgba(0, 0, 0, 0.45);
 }
 
+body.theme-light .sensor-marker {
+  border-color: rgba(15, 23, 42, 0.68);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 10px 24px rgba(15, 23, 42, 0.28);
+}
+
+body.theme-light .sensor-marker-selected {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.96), 0 0 0 7px rgba(37, 99, 235, 0.32), 0 14px 32px rgba(15, 23, 42, 0.35);
+}
+
 .sensor-tooltip,
 .sensor-popup {
   background: rgba(7, 14, 28, 0.96);
