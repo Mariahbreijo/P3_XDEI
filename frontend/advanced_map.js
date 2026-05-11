@@ -335,7 +335,7 @@ function ensureMap() {
   const map = L.map("advanced-map", {
     zoomControl: true,
     scrollWheelZoom: true,
-  }).setView([40.4168, -3.7038], 5);
+  }).setView([43.0, -3.7], 5);
 
   const baseLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -573,7 +573,7 @@ async function initAdvancedMap() {
 window.addEventListener("fiware:view-changed", (event) => {
   if (event?.detail?.view === "advanced") {
     if (advancedMapState.map) {
-      advancedMapState.map.setView([40.4168, -3.7038], 6);
+      advancedMapState.map.setView([43.0, -3.7], 5);
     }
     resizeAdvancedMap();
   }
