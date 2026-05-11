@@ -38,6 +38,7 @@
           <button class="topnav-tab" type="button" data-view-target="advanced">Mapa avanzado</button>
           <button class="topnav-tab" type="button" data-view-target="detail">Detalle sensor</button>
         </nav>
+        <button id="theme-toggle" class="ghost-button" type="button" aria-pressed="false" aria-label="Alternar tema">Modo claro</button>
         <div class="topbar-pills">
           <span class="pill">Orion-LD Ready</span>
           <span class="pill">QuantumLeap</span>
@@ -263,4 +264,31 @@
         </div>
       </section>
   </body>
+  <script>
+    (function(){
+      const THEME_KEY = 'app_theme';
+      const body = document.body;
+      const btn = document.getElementById('theme-toggle');
+
+      function applyTheme(theme) {
+        if (theme === 'light') body.classList.add('theme-light'); else body.classList.remove('theme-light');
+        if (btn) {
+          btn.textContent = theme === 'light' ? 'Modo oscuro' : 'Modo claro';
+          btn.setAttribute('aria-pressed', theme === 'light');
+        }
+      }
+
+      const saved = localStorage.getItem(THEME_KEY);
+      const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      applyTheme(saved || (prefersLight ? 'light' : 'dark'));
+
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const newTheme = body.classList.contains('theme-light') ? 'dark' : 'light';
+          localStorage.setItem(THEME_KEY, newTheme);
+          applyTheme(newTheme);
+        });
+      }
+    })();
+  </script>
 </html>

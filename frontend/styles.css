@@ -14,6 +14,26 @@
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
 }
 
+body.theme-light {
+  --bg: #f7fafc;
+  --bg-2: #eef2f7;
+  --card: rgba(255, 255, 255, 0.94);
+  --card-border: rgba(15, 23, 42, 0.06);
+  --text: #0f172a;
+  --muted: #475569;
+  --good: #059669;
+  --moderate: #d97706;
+  --poor: #ea580c;
+  --danger: #b91c1c;
+  --air: #2563eb;
+  --noise: #be185d;
+  --shadow: 0 12px 32px rgba(2, 6, 23, 0.06);
+}
+
+body {
+  transition: background 220ms ease, color 220ms ease;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -831,6 +851,31 @@ body[data-active-view="advanced"] .view-advanced {
   justify-content: space-between;
   gap: 12px;
   color: var(--muted);
+}
+
+.sensor-detail-button {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  border-radius: 12px;
+  padding: 9px 12px;
+  background: rgba(96, 165, 250, 0.14);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.sensor-detail-button:hover {
+  background: rgba(96, 165, 250, 0.22);
+  border-color: rgba(96, 165, 250, 0.62);
+  transform: translateY(-1px);
+}
+
+.sensor-detail-button:focus-visible {
+  outline: 2px solid rgba(147, 197, 253, 0.9);
+  outline-offset: 2px;
 }
 
 @media (max-width: 1100px) {

@@ -200,8 +200,26 @@ function renderSensorPopup(sensor) {
       <p><strong>Coordenadas:</strong> ${sensor.coordinates.lat.toFixed(5)}, ${sensor.coordinates.lon.toFixed(5)}</p>
       ${airStatus ? `<p><strong>Color aire:</strong> ${escapeHtml(airStatus.label)}</p>` : ""}
       ${noiseStatus ? `<p><strong>Color ruido:</strong> ${escapeHtml(noiseStatus.label)}</p>` : ""}
+      <button type="button" class="sensor-detail-button" data-action="open-sensor-detail">Vista en detalle</button>
     </div>
   `;
+}
+
+function attachSensorPopupActions(popupElement, sensor) {
+  const detailButton = popupElement?.querySelector('[data-action="open-sensor-detail"]');
+  if (!detailButton) return;
+
+  detailButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (typeof window.setSelectedCity === "function") {
+      window.setSelectedCity(sensor.city);
+    }
+    if (typeof window.openSensorDetail === "function") {
+      window.openSensorDetail(sensor);
+    }
+  });
 }
 
 function createMarkerIcon(sensor, selectedCity) {
@@ -250,8 +268,11 @@ function buildAirLayer(sensor, selectedCity) {
     if (typeof window.setSelectedCity === "function") {
       window.setSelectedCity(sensor.city);
     }
-    if (typeof window.openSensorDetail === "function") {
-      window.openSensorDetail(sensor);
+  });
+  marker.on("popupopen", (event) => {
+    const popupElement = event.popup?.getElement?.();
+    if (popupElement) {
+      attachSensorPopupActions(popupElement, sensor);
     }
   });
   marker.on("mouseover", () => marker.openTooltip());
@@ -278,8 +299,11 @@ function buildNoiseLayer(sensor, selectedCity) {
     if (typeof window.setSelectedCity === "function") {
       window.setSelectedCity(sensor.city);
     }
-    if (typeof window.openSensorDetail === "function") {
-      window.openSensorDetail(sensor);
+  });
+  marker.on("popupopen", (event) => {
+    const popupElement = event.popup?.getElement?.();
+    if (popupElement) {
+      attachSensorPopupActions(popupElement, sensor);
     }
   });
   marker.on("mouseover", () => marker.openTooltip());
