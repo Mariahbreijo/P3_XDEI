@@ -25,7 +25,27 @@ La implementación actual opera como una demo FIWARE con estos componentes:
   - `fiware:view-changed` — notifica cambios de vista (`detail`, `advanced`, `main`).
   - `fiware:selected-sensor-changed` — notifica cambios en la selección de sensor y es usado por `sensor_detail.js` para refrescar la UI.
 
+#### Extensión funcional reciente en `sensor_detail.js`
+
+La vista `detail` incorpora ahora una capa de analítica y salud en cliente, manteniendo desacoplado el backend:
+
+- Generación de histórico semanal sintético a partir de valores actuales del sensor para visualización estable.
+- Renderizado de:
+  - KPIs dinámicos por tipo de sensor.
+  - Resumen semanal y tabla histórica.
+  - Gráfico semanal `Chart.js` con multiserie por dominio (`air`/`noise`).
+  - Tarjeta `Día más perjudicial` con score de riesgo.
+- Motor de alertas OMS local:
+  - Umbrales aplicados: `PM2.5`, `PM10`, `NO2`, `O3`, `LAeq`.
+  - Estados visuales: `safe`, `warning`, `danger`.
+  - Exposición en badges KPI y banner de estado general OMS.
+- Recomendaciones de salud dinámicas:
+  - Perfil `air`: recomendaciones respiratorias y de exposición exterior.
+  - Perfil `noise`: recomendaciones de protección auditiva y reducción de exposición sonora.
+
 Este diseño mantiene el mapa y el dashboard sin acoplamientos fuertes: el Mapa solo invoca un helper público y el módulo detalle se encarga de consumir el estado global.
+
+Decisión arquitectónica: la lógica OMS y recomendaciones reside en frontend porque usa el estado visual y permite respuesta inmediata sin aumentar latencia ni complejidad en API. Si en futuras iteraciones se requiere auditabilidad regulatoria, esta lógica podrá migrarse o duplicarse en backend para validación server-side.
 
 ## Componentes e integraciones
 

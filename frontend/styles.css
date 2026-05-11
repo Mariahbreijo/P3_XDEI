@@ -517,6 +517,106 @@ body[data-active-view="advanced"] .view-advanced {
   border-color: rgba(148, 163, 184, 0.35);
 }
 
+/* KPI badges for WHO alerts */
+.kpi-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.kpi-safe {
+  color: #064e3b;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.18);
+}
+.kpi-warning {
+  color: #78350f;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.16);
+}
+.kpi-danger {
+  color: #7f1d1d;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.16);
+}
+
+/* Small alert pill inside worst day card */
+.detail-worst-risk {
+  padding: 6px 12px;
+}
+
+/* OMS banner */
+.oms-banner {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.oms-banner .oms-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 20px;
+}
+.oms-banner .oms-text p {
+  margin: 0;
+  color: var(--text);
+}
+.oms-safe {
+  background: linear-gradient(180deg, rgba(34,197,94,0.08), rgba(255,255,255,0.03));
+  border: 1px solid rgba(34,197,94,0.12);
+}
+.oms-safe .oms-icon { background: rgba(16,185,129,0.12); color: #065f46; }
+.oms-warning {
+  background: linear-gradient(180deg, rgba(245,158,11,0.06), rgba(255,255,255,0.03));
+  border: 1px solid rgba(245,158,11,0.12);
+}
+.oms-warning .oms-icon { background: rgba(245,158,11,0.08); color: #92400e; }
+.oms-danger {
+  background: linear-gradient(180deg, rgba(239,68,68,0.06), rgba(255,255,255,0.03));
+  border: 1px solid rgba(239,68,68,0.12);
+}
+.oms-danger .oms-icon { background: rgba(239,68,68,0.08); color: #7f1d1d; }
+
+/* Health recommendations panel */
+.health-recs .health-recs-panel {
+  margin-top: 6px;
+  padding: 18px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+.health-recs-panel h4 {
+  margin: 0 0 12px 0;
+}
+.health-recs-list {
+  display: grid;
+  gap: 12px;
+}
+.health-rec-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.health-rec-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(220, 252, 231, 0.9);
+  color: #065f46;
+  font-size: 20px;
+}
+.health-rec-text { color: #0f172a; }
+
 .detail-summary-card strong span {
   color: var(--muted);
   font-size: 0.82em;

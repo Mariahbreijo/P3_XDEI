@@ -103,6 +103,88 @@ Notas:
 - `selectedSensor` es un estado UI — la fuente de verdad sigue siendo Orion/Backend para datos históricos o consultas detalladas.
 - El módulo `sensor_detail.js` consume `selectedSensor` para renderizar nombre, ciudad y tipo de sensor; puede solicitar históricos posteriormente usando `/api/v1/air-quality/{sensor_id}` o el proxy a Orion.
 
+### Frontend: modelos derivados para vista `detail`
+
+Para enriquecer la experiencia en cliente, la vista detalle utiliza modelos derivados calculados localmente.
+
+#### `weeklyHistory` (derivado)
+
+```json
+[
+  {
+    "day": "Lunes",
+    "values": {
+      "pm25": 18.2,
+      "pm10": 33.5,
+      "no2": 21.0,
+      "o3": 54.3,
+      "ica": 57
+    },
+    "status": "Moderado"
+  }
+]
+```
+
+Para sensores de ruido:
+
+```json
+[
+  {
+    "day": "Lunes",
+    "values": {
+      "laeq": 67.4,
+      "lamax": 75.8,
+      "la90": 61.2
+    },
+    "status": "Moderado"
+  }
+]
+```
+
+#### `whoAlert` (derivado por métrica OMS)
+
+```json
+{
+  "key": "pm25",
+  "value": 18.2,
+  "level": "warning"
+}
+```
+
+Convención de niveles UI:
+- `safe`: valor <= límite OMS.
+- `warning`: valor > límite OMS y <= 2x límite.
+- `danger`: valor > 2x límite.
+
+#### Límites OMS usados en frontend
+
+```json
+{
+  "pm25": 15,
+  "pm10": 45,
+  "no2": 25,
+  "o3": 100,
+  "laeq": 55
+}
+```
+
+Unidades:
+- `pm25`, `pm10`, `no2`, `o3`: `µg/m³`.
+- `laeq`: `dB`.
+
+#### `healthRecommendations` (derivado contextual)
+
+```json
+[
+  { "icon": "😷", "text": "Usar mascarilla en exteriores" },
+  { "icon": "🫧", "text": "Usar purificador de aire" }
+]
+```
+
+Regla de coherencia:
+- Si `mode = air`, se generan recomendaciones respiratorias y de exposición ambiental.
+- Si `mode = noise`, se generan recomendaciones acústicas (sin mascarilla/purificador).
+
 ---
 
 Si se desea que este documento sea compatible con un catálogo Smart Data Models público, la siguiente iteración añadirá enlaces a las especificaciones oficiales y normalizará nombres de atributos (por ejemplo `pm25` vs `PM2_5`).

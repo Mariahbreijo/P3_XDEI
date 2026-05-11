@@ -275,6 +275,32 @@ function chartSeriesConfig(mode) {
   ];
 }
 
+// WHO / OMS limits (24h or representative) and alert evaluation
+const WHO_LIMITS = {
+  pm25: 15, // µg/m³ (24h guideline)
+  pm10: 45, // µg/m³ (24h guideline)
+  no2: 25,  // µg/m³ (24h guideline)
+  o3: 100,  // µg/m³ (8h guideline simplified)
+  laeq: 55, // dB (daytime heuristic)
+};
+
+function whoAlertLevel(key, value) {
+  if (!Number.isFinite(value)) return "unknown";
+  const limit = WHO_LIMITS[key];
+  if (!Number.isFinite(limit)) return "unknown";
+  if (value <= limit) return "safe";
+  if (value <= limit * 2) return "warning";
+  return "danger";
+}
+
+function alertRank(alert) {
+  return alert === "danger" ? 3 : alert === "warning" ? 2 : alert === "safe" ? 1 : 0;
+}
+
+function alertLabel(alert) {
+  return alert === "danger" ? "Peligro" : alert === "warning" ? "Advertencia" : alert === "safe" ? "Seguro" : "N/D";
+}
+
 function buildChartDatasets(mode, history) {
   return chartSeriesConfig(mode).map((series) => ({
     label: series.label,
@@ -452,12 +478,15 @@ function renderWorstDayCard(sensor, history) {
   `;
 }
 
-function renderMetricCard(metric, value, unit, extraClass = "") {
-  const displayValue = Number.isFinite(value) ? formatNumber(value, metric === "ica" ? 0 : 1) : "N/D";
+function renderMetricCard(key, label, value, unit, extraClass = "") {
+  const displayValue = Number.isFinite(value) ? formatNumber(value, key === "ica" ? 0 : 1) : "N/D";
   const unitLabel = unit ? ` ${unit}` : "";
+  const alert = whoAlertLevel(key, value);
+  const badge = alert === "unknown" ? "" : `<span class="kpi-badge kpi-${alert}">${escapeHtml(alertLabel(alert))}</span>`;
+
   return `
     <article class="detail-kpi-card ${extraClass}">
-      <p class="label">${escapeHtml(metric)}</p>
+      <p class="label">${escapeHtml(label)} ${badge}</p>
       <strong>${escapeHtml(displayValue)}${escapeHtml(unitLabel)}</strong>
     </article>
   `;
@@ -478,15 +507,17 @@ function renderDetailKpis(sensor) {
   const cards = definition.metrics.map((metric) => {
     if (metric.key === "status") {
       const statusValue = sensorMode(sensor) === "noise" ? (current.status || "N/D") : "N/D";
+      const alert = whoAlertLevel("laeq", current.laeq);
+      const badge = alert === "unknown" ? "" : `<span class="kpi-badge kpi-${alert}">${escapeHtml(alertLabel(alert))}</span>`;
       return `
         <article class="detail-kpi-card detail-kpi-status">
-          <p class="label">${escapeHtml(metric.label)}</p>
+          <p class="label">${escapeHtml(metric.label)} ${badge}</p>
           <strong>${escapeHtml(statusValue || "N/D")}</strong>
         </article>
       `;
     }
 
-    return renderMetricCard(metric.label, current[metric.key], metric.unit, metric.key === definition.primaryMetric?.toLowerCase() ? "is-primary" : "");
+    return renderMetricCard(metric.key, metric.label, current[metric.key], metric.unit, metric.key === definition.primaryMetric?.toLowerCase() ? "is-primary" : "");
   });
 
   grid.innerHTML = cards.join("");
@@ -612,6 +643,10 @@ function clearDetailExtras() {
   if (weeklySummary) weeklySummary.innerHTML = '<article class="detail-summary-card"><strong>N/D</strong></article>';
   if (weeklyHistory) weeklyHistory.innerHTML = '<p class="detail-empty">N/D</p>';
   if (worstDay) worstDay.innerHTML = '<article class="detail-worst-card risk-unknown"><p class="label">Día más perjudicial</p><h5>N/D</h5></article>';
+  const omsBanner = $("#detail-oms-banner");
+  const healthRecs = $("#detail-health-recommendations");
+  if (omsBanner) omsBanner.innerHTML = "";
+  if (healthRecs) healthRecs.innerHTML = "";
   if (detailState.chart) {
     detailState.chart.destroy();
     detailState.chart = null;
@@ -684,11 +719,139 @@ function renderSensorDetail() {
   const history = generateWeeklyHistory(sensor);
   detailState.history = history;
   detailState.mode = sensorMode(sensor) === "noise" ? "noise" : "air";
+  const current = getCurrentSensorValues(sensor);
+  renderOmsBanner(sensor, current);
+  renderHealthRecommendations(sensor, current);
   renderDetailKpis(sensor);
   renderWeeklySummary(sensor, history);
   renderWeeklyChart();
   renderWorstDayCard(sensor, history);
   renderWeeklyHistory(sensor, history);
+}
+
+function computeOverallWhoAlert(sensor, current) {
+  const mode = sensorMode(sensor);
+  const checks = [];
+  if (mode === "air") {
+    checks.push(["pm25", current.pm25]);
+    checks.push(["pm10", current.pm10]);
+    checks.push(["no2", current.no2]);
+    checks.push(["o3", current.o3]);
+  } else if (mode === "noise") {
+    checks.push(["laeq", current.laeq]);
+  }
+
+  const evaluated = checks.map(([k, v]) => ({ key: k, value: v, level: whoAlertLevel(k, v) }));
+  evaluated.sort((a, b) => alertRank(b.level) - alertRank(a.level));
+  return evaluated.length ? evaluated[0] : { key: null, value: null, level: "unknown" };
+}
+
+function renderOmsBanner(sensor, current) {
+  const container = $("#detail-oms-banner");
+  if (!container) return;
+  const overall = computeOverallWhoAlert(sensor, current);
+  const cls = overall.level === "danger" ? "oms-danger" : overall.level === "warning" ? "oms-warning" : overall.level === "safe" ? "oms-safe" : "oms-unknown";
+  const metricLabel = overall.key ? (overall.key === "pm25" ? "PM2.5" : overall.key === "pm10" ? "PM10" : overall.key === "no2" ? "NO2" : overall.key === "o3" ? "O3" : overall.key === "laeq" ? "LAeq" : overall.key) : "métrica";
+
+  let message = "N/D";
+  if (overall.level === "safe") {
+    message = `La concentración de ${metricLabel} actualmente cumple con la directriz de la OMS.`;
+  } else if (overall.level === "warning") {
+    message = `Advertencia: ${metricLabel} está por encima del límite OMS.`;
+  } else if (overall.level === "danger") {
+    message = `Peligro: ${metricLabel} supera ampliamente el límite OMS.`;
+  }
+
+  container.innerHTML = `
+    <div class="oms-banner ${cls}">
+      <div class="oms-icon">${overall.level === 'safe' ? '✔️' : overall.level === 'warning' ? '⚠️' : overall.level === 'danger' ? '⛔' : 'ℹ️'}</div>
+      <div class="oms-text"><p>${escapeHtml(message)}</p></div>
+    </div>
+  `;
+}
+
+function determineRecommendations(overall, mode) {
+  if (!overall || !overall.level) return [];
+  const level = overall.level;
+
+  if (mode === "noise") {
+    if (level === "danger") {
+      return [
+        { icon: "🔇", text: "Evitar zonas con tráfico intenso y focos de ruido" },
+        { icon: "🎧", text: "Usar protección auditiva en exteriores prolongados" },
+        { icon: "🪟", text: "Cerrar ventanas y reducir fuentes de ruido en casa" },
+        { icon: "⏰", text: "Limitar el tiempo de exposición continua al ruido" },
+      ];
+    }
+
+    if (level === "warning") {
+      return [
+        { icon: "🔉", text: "Reducir permanencia en áreas ruidosas" },
+        { icon: "🏠", text: "Priorizar actividades en interiores silenciosos" },
+        { icon: "🌙", text: "Evitar exposición a ruido durante la noche" },
+      ];
+    }
+
+    return [
+      { icon: "✅", text: "Actividad normal en entorno acústico aceptable" },
+      { icon: "🌿", text: "Priorizar rutas y zonas urbanas tranquilas" },
+      { icon: "😴", text: "Mantener buena higiene del sueño en ambientes silenciosos" },
+    ];
+  }
+
+  if (mode === "air") {
+    if (level === "danger") {
+      return [
+        { icon: "🏃‍♂️", text: "Evitar ejercicio exterior" },
+        { icon: "🪟", text: "Cerrar ventanas" },
+        { icon: "😷", text: "Usar mascarilla en exteriores" },
+        { icon: "🫧", text: "Usar purificador de aire" },
+      ];
+    }
+
+    if (level === "warning") {
+      return [
+        { icon: "🚶‍♀️", text: "Evitar ejercicio intenso al aire libre" },
+        { icon: "🪟", text: "Ventilar en horas de menor tráfico" },
+        { icon: "😷", text: "Considerar mascarilla en trayectos largos" },
+      ];
+    }
+
+    return [
+      { icon: "✅", text: "Actividad normal si niveles bajos" },
+      { icon: "🚴‍♀️", text: "Disfrutar actividades al aire libre" },
+      { icon: "🪟", text: "Abrir ventanas para ventilar" },
+    ];
+  }
+
+  return [
+    { icon: "ℹ️", text: "Sin datos suficientes para recomendaciones específicas" },
+  ];
+}
+
+function renderHealthRecommendations(sensor, current) {
+  const container = $("#detail-health-recommendations");
+  if (!container) return;
+  const overall = computeOverallWhoAlert(sensor, current);
+  const recs = determineRecommendations(overall, sensorMode(sensor));
+
+  container.innerHTML = `
+    <section class="health-recs">
+      <div class="health-recs-panel">
+        <h4>Recomendaciones de salud</h4>
+        <div class="health-recs-list">
+          ${recs
+            .map((r) => `
+              <div class="health-rec-item">
+                <div class="health-rec-icon">${escapeHtml(r.icon)}</div>
+                <div class="health-rec-text">${escapeHtml(r.text)}</div>
+              </div>
+            `)
+            .join("")}
+        </div>
+      </div>
+    </section>
+  `;
 }
 
 function bindBackButton() {
