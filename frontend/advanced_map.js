@@ -380,6 +380,17 @@ function updateStatus(message) {
   if (status) status.textContent = message;
 }
 
+function focusMapOnCity(cityName) {
+  if (!advancedMapState.map || !cityName || cityName === "all") return false;
+
+  const citySensors = advancedMapState.allSensors.filter((sensor) => sensor.city === cityName);
+  if (!citySensors.length) return false;
+
+  const bounds = L.latLngBounds(citySensors.map((sensor) => [sensor.coordinates.lat, sensor.coordinates.lon]));
+  advancedMapState.map.fitBounds(bounds.pad(0.22), { animate: true, maxZoom: 13 });
+  return true;
+}
+
 function updateClusterLayers() {
   if (!advancedMapState.map) return;
 
@@ -443,8 +454,13 @@ function readFiltersFromUI() {
 }
 
 function applyUIFilters() {
+  const previousCity = advancedMapState.filters.city;
   readFiltersFromUI();
   updateClusterLayers();
+
+  if (advancedMapState.filters.city !== "all" && advancedMapState.filters.city !== previousCity) {
+    focusMapOnCity(advancedMapState.filters.city);
+  }
 }
 
 async function fetchEntitiesFromOrion() {
@@ -492,6 +508,10 @@ function handleSelectedCityChange(event) {
   advancedMapState.selectedCity = event?.detail?.city || window.appState?.selectedCity || null;
   syncSelectionLabel();
   updateClusterLayers();
+
+  if (advancedMapState.selectedCity) {
+    focusMapOnCity(advancedMapState.selectedCity);
+  }
 }
 
 function bindAdvancedControls() {
