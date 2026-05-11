@@ -29,6 +29,19 @@ const advancedMapState = {
 };
 
 const $ = (selector) => document.querySelector(selector);
+const i18n = () => window.appI18n;
+
+function t(key, params = {}) {
+  return i18n()?.t?.(key, params) ?? key;
+}
+
+function airLabel(code) {
+  return i18n()?.translateAirLevel?.(code) ?? code ?? t("status.noData");
+}
+
+function noiseLabel(code) {
+  return i18n()?.translateNoiseLevel?.(code) ?? code ?? t("status.noData");
+}
 
 function typeIncludes(entity, needle) {
   const type = entity?.type;
@@ -99,6 +112,20 @@ function classifyNoise(value) {
   if (value < 70) return { label: "Moderado", color: "#fbbf24", size: 24 };
   if (value < 85) return { label: "Alto", color: "#ef4444", size: 30 };
   return { label: "Crítico", color: "#a855f7", size: 36 };
+}
+
+function classifyAirQualityCode(value) {
+  if (value <= 50) return "GOOD";
+  if (value <= 100) return "MODERATE";
+  if (value <= 150) return "POOR";
+  return "VERY_POOR";
+}
+
+function classifyNoiseCode(value) {
+  if (value < 55) return "QUIET";
+  if (value < 70) return "MODERATE";
+  if (value < 85) return "LOUD";
+  return "VERY_LOUD";
 }
 
 function extractCity(entity) {
@@ -180,7 +207,7 @@ function parseSensorEntities(entities) {
       source: entity,
       values: { pm10, pm25, no2, o3, laeq, lamax, la90 },
       ica,
-      status: isAir ? classifyAirQuality(ica ?? 0).label : classifyNoise(laeq ?? 0).label,
+      statusCode: isAir ? classifyAirQualityCode(ica ?? 0) : classifyNoiseCode(laeq ?? 0),
     });
   }
 
@@ -188,7 +215,7 @@ function parseSensorEntities(entities) {
 }
 
 function renderSensorPopup(sensor) {
-  const title = sensor.category === "air" ? "Calidad del aire" : "Ruido urbano";
+  const title = sensor.category === "air" ? t("advanced.popupAir") : t("advanced.popupNoise");
   const airStatus = sensor.category === "air" ? classifyAirQuality(sensor.ica ?? 0) : null;
   const noiseStatus = sensor.category === "noise" ? classifyNoise(sensor.values.laeq ?? 0) : null;
   const rows = sensor.category === "air"
@@ -209,15 +236,15 @@ function renderSensorPopup(sensor) {
     <div class="sensor-popup">
       <h4>${escapeHtml(sensor.zone || sensor.city)}</h4>
       <p>${escapeHtml(title)}</p>
-      <p><strong>Estado:</strong> ${escapeHtml(sensor.status)}</p>
-      <p><strong>Timestamp:</strong> ${escapeHtml(sensor.timestamp)}</p>
+      <p><strong>${escapeHtml(t("advanced.popupStatus"))}</strong> ${escapeHtml(sensor.category === "air" ? airLabel(sensor.statusCode) : noiseLabel(sensor.statusCode))}</p>
+      <p><strong>${escapeHtml(t("advanced.popupTimestamp"))}</strong> ${escapeHtml(sensor.timestamp)}</p>
       <div class="popup-grid">
         ${rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}
       </div>
-      <p><strong>Coordenadas:</strong> ${sensor.coordinates.lat.toFixed(5)}, ${sensor.coordinates.lon.toFixed(5)}</p>
-      ${airStatus ? `<p><strong>Color aire:</strong> ${escapeHtml(airStatus.label)}</p>` : ""}
-      ${noiseStatus ? `<p><strong>Color ruido:</strong> ${escapeHtml(noiseStatus.label)}</p>` : ""}
-      <button type="button" class="sensor-detail-button" data-action="open-sensor-detail">Vista en detalle</button>
+      <p><strong>${escapeHtml(t("advanced.popupCoordinates"))}</strong> ${sensor.coordinates.lat.toFixed(5)}, ${sensor.coordinates.lon.toFixed(5)}</p>
+      ${airStatus ? `<p><strong>${escapeHtml(t("advanced.popupAirColor"))}</strong> ${escapeHtml(airStatus.label)}</p>` : ""}
+      ${noiseStatus ? `<p><strong>${escapeHtml(t("advanced.popupNoiseColor"))}</strong> ${escapeHtml(noiseStatus.label)}</p>` : ""}
+      <button type="button" class="sensor-detail-button" data-action="open-sensor-detail">${escapeHtml(t("advanced.detailButton"))}</button>
     </div>
   `;
 }
@@ -274,7 +301,7 @@ function buildAirLayer(sensor, selectedCity) {
     riseOnHover: true,
   });
 
-  marker.bindTooltip(`${sensor.zone || sensor.city} · Aire`, {
+  marker.bindTooltip(`${sensor.zone || sensor.city} · ${t("advanced.popupAir")}`, {
     direction: "top",
     sticky: true,
     className: "sensor-tooltip",
@@ -305,7 +332,7 @@ function buildNoiseLayer(sensor, selectedCity) {
     riseOnHover: true,
   });
 
-  marker.bindTooltip(`${sensor.zone || sensor.city} · Ruido`, {
+  marker.bindTooltip(`${sensor.zone || sensor.city} · ${t("advanced.popupNoise")}`, {
     direction: "top",
     sticky: true,
     className: "sensor-tooltip",
@@ -365,22 +392,33 @@ function ensureMap() {
   advancedMapState.airCluster.addTo(map);
   advancedMapState.noiseCluster.addTo(map);
 
-  advancedMapState.layerControl = L.control.layers(null, {
-    "Calidad del aire": advancedMapState.airCluster,
-    "Ruido urbano": advancedMapState.noiseCluster,
-  }, { collapsed: false }).addTo(map);
+  refreshLayerControl();
 
   advancedMapState.map = map;
   return map;
+}
+
+function refreshLayerControl() {
+  if (!advancedMapState.map) return;
+
+  if (advancedMapState.layerControl) {
+    advancedMapState.map.removeControl(advancedMapState.layerControl);
+    advancedMapState.layerControl = null;
+  }
+
+  advancedMapState.layerControl = L.control.layers(null, {
+    [t("advanced.popupAir")]: advancedMapState.airCluster,
+    [t("advanced.popupNoise")]: advancedMapState.noiseCluster,
+  }, { collapsed: false }).addTo(advancedMapState.map);
 }
 
 function updateCitySelector(sensors) {
   const select = $("#advanced-filter-city");
   if (!select) return;
 
-  const cities = Array.from(new Set(sensors.map((sensor) => sensor.city))).sort((left, right) => left.localeCompare(right, "es"));
+  const cities = Array.from(new Set(sensors.map((sensor) => sensor.city))).sort((left, right) => left.localeCompare(right, i18n()?.getLocale?.() || "es"));
   const currentValue = select.value || "all";
-  select.innerHTML = [`<option value="all">Todas</option>`, ...cities.map((city) => `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`)].join("");
+  select.innerHTML = [`<option value="all">${t("advanced.cityAll")}</option>`, ...cities.map((city) => `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`)].join("");
   select.value = cities.includes(currentValue) ? currentValue : "all";
 }
 
@@ -389,7 +427,7 @@ function syncSelectionLabel() {
   if (!label) return;
 
   const selectedCity = advancedMapState.selectedCity || window.appState?.selectedCity || null;
-  label.textContent = selectedCity ? `Ciudad activa sincronizada: ${selectedCity}. Los sensores de esa ciudad se resaltan en el mapa.` : "Sin ciudad activa. Selecciona un sensor o una ciudad desde el dashboard.";
+  label.textContent = selectedCity ? t("advanced.citySynced", { city: selectedCity }) : t("advanced.noCity");
 }
 
 function updateStatus(message) {
@@ -443,7 +481,7 @@ function updateClusterLayers() {
     advancedMapState.hasAdjustedBounds = true;
   }
 
-  updateStatus(`${filteredSensors.length} sensores visibles · Aire ${airCount} · Ruido ${noiseCount}`);
+  updateStatus(t("status.visibleSensors", { count: filteredSensors.length, air: airCount, noise: noiseCount }));
   syncSelectionLabel();
 
   requestAnimationFrame(() => advancedMapState.map.invalidateSize());
@@ -504,7 +542,7 @@ async function refreshAdvancedMap() {
   const refreshButton = $("#advanced-map-refresh");
   if (refreshButton) refreshButton.disabled = true;
 
-  updateStatus("Consultando Orion-LD...");
+  updateStatus(t("status.consultingOrion"));
   try {
     const entities = await fetchEntitiesFromOrion();
     advancedMapState.allSensors = parseSensorEntities(entities);
@@ -514,7 +552,7 @@ async function refreshAdvancedMap() {
     updateClusterLayers();
 
     if (!advancedMapState.allSensors.length) {
-      updateStatus("No hay sensores visibles en Orion-LD");
+      updateStatus(t("status.noVisibleSensors"));
     }
   } finally {
     if (refreshButton) refreshButton.disabled = false;
@@ -551,6 +589,15 @@ function bindAdvancedControls() {
   if (refreshButton) refreshButton.addEventListener("click", refreshAdvancedMap);
 }
 
+function refreshLocalizedAdvancedUi() {
+  refreshLayerControl();
+  updateCitySelector(advancedMapState.allSensors);
+  syncSelectionLabel();
+  if (advancedMapState.map) {
+    updateClusterLayers();
+  }
+}
+
 async function initAdvancedMap() {
   if (advancedMapState.initialized) return;
   const mapContainer = $("#advanced-map");
@@ -569,6 +616,11 @@ async function initAdvancedMap() {
   if (advancedMapState.refreshTimer) clearInterval(advancedMapState.refreshTimer);
   advancedMapState.refreshTimer = window.setInterval(refreshAdvancedMap, 120000);
 }
+
+window.addEventListener("fiware:locale-changed", () => {
+  if (!advancedMapState.initialized) return;
+  refreshLocalizedAdvancedUi();
+});
 
 window.addEventListener("fiware:view-changed", (event) => {
   if (event?.detail?.view === "advanced") {

@@ -25,11 +25,19 @@ La implementación actual opera como una demo FIWARE con estos componentes:
   - `fiware:view-changed` — notifica cambios de vista (`detail`, `advanced`, `main`).
   - `fiware:selected-sensor-changed` — notifica cambios en la selección de sensor y es usado por `sensor_detail.js` para refrescar la UI.
 
+### Frontend: soporte multidioma
+
+- El frontend incluye un runtime i18n compartido en cliente con idioma por defecto en español y opción de inglés persistida en `localStorage`.
+- El selector de idioma se muestra junto al toggle de tema en el header y actualiza el texto visible sin recargar la app.
+- Las traducciones cubren el shell estático, el dashboard, el mapa avanzado y la vista detalle, incluyendo estados, tooltips, popups, recomendaciones y etiquetas derivadas.
+- Los componentes con contenido generado en cliente se suscriben a un evento de cambio de idioma para reconstruir su UI con las nuevas etiquetas.
+
 #### Extensión funcional reciente en `sensor_detail.js`
 
 La vista `detail` incorpora ahora una capa de analítica y salud en cliente, manteniendo desacoplado el backend:
 
 - Generación de histórico semanal sintético a partir de valores actuales del sensor para visualización estable.
+- Las etiquetas del histórico semanal se obtienen del diccionario i18n, por lo que cambian entre español e inglés junto con el resto de la vista.
 - Renderizado de:
   - KPIs dinámicos por tipo de sensor.
   - Resumen semanal y tabla histórica.
@@ -53,7 +61,7 @@ Decisión arquitectónica: la lógica OMS y recomendaciones reside en frontend p
 
 - `title` y subtítulo: el sitio muestra ahora "Centro de Monitorización Ambiental" con tipografía `Rubik` en el encabezado para una apariencia más moderna.
 - `topnav` actualizado: botones más prominentes; se eliminó el botón "Detalle sensor" del topbar para simplificar la navegación (la vista `detail` sigue disponible desde el mapa).
-- Tema: el toggle de tema incluye emoji y mantiene contraste correcto en modo oscuro.
+- Tema e idioma: el toggle de tema incluye emoji, el selector de idioma aparece a su lado y ambos persisten la preferencia del usuario.
 - Zona en tooltips: el frontend extrae la zona/barrio del `id` de la entidad NGSI-LD y la muestra en tooltips y popups (ej. `Madrid-Centro-01`).
 - Map centering: el mapa avanzado se inicia con `setView([43.0, -3.7], 5)` para centrar en España conservando contexto europeo.
 - UI scale: se ajustó `html { font-size: 15px; }` y paddings para que la interfaz se vea bien al 100% de zoom en navegadores comunes.

@@ -15,7 +15,7 @@ Nota: En la versión actual se generan múltiples sensores por ciudad y por barr
 - Entidad: `urn:ngsi-ld:<Type>:ES-<City>-<Neighborhood>-<NN>` (ej. `urn:ngsi-ld:AirQualityObserved:ES-Madrid-Centro-01`)
 - Dispositivo / device_id (IoT Agent): `<type>-sensor-<city>-<neighborhood>-<NN>` (ej. `air-sensor-madrid-centro-01`)
 
-Nota adicional: el frontend extrae el nombre de la zona/barrio directamente del `id` de la entidad cuando está disponible (p. ej. `Madrid-Centro-01`) y lo muestra en tooltips y popups del mapa para ayudar a la identificación rápida de ubicaciones.
+Nota adicional: el frontend extrae el nombre de la zona/barrio directamente del `id` de la entidad cuando está disponible (p. ej. `Madrid-Centro-01`) y lo muestra en tooltips y popups del mapa para ayudar a la identificación rápida de ubicaciones. Las etiquetas UI derivadas de estos datos se localizan en español o inglés según el idioma activo.
 
 Cada dispositivo provisionado incluye `static_attributes.location` (GeoProperty) con coordenadas ligeramente diferentes por sensor dentro de la misma zona para permitir clustering en el frontend.
 
@@ -111,6 +111,8 @@ Para enriquecer la experiencia en cliente, la vista detalle utiliza modelos deri
 
 #### `weeklyHistory` (derivado)
 
+La propiedad `day` es una etiqueta de interfaz, no parte del contrato NGSI-LD. El frontend la genera con i18n y la muestra en español por defecto o en inglés cuando se activa ese idioma.
+
 ```json
 [
   {
@@ -176,6 +178,8 @@ Unidades:
 
 #### `healthRecommendations` (derivado contextual)
 
+El texto de las recomendaciones también se localiza en la capa frontend; el contenido puede variar entre español e inglés sin cambiar la estructura del dato.
+
 ```json
 [
   { "icon": "😷", "text": "Usar mascarilla en exteriores" },
@@ -201,7 +205,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
 {
   "id": "urn:ngsi-ld:NoiseLevelObserved:ES-Barcelona-noise-sensor-05",
   "type": "NoiseLevelObserved",
-  
+
   "location": {
     "type": "GeoProperty",
     "value": {
@@ -209,7 +213,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
       "coordinates": [2.1734, 41.3851]
     }
   },
-  
+
   "address": {
     "type": "Property",
     "value": {
@@ -219,7 +223,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
       "postalCode": "08006"
     }
   },
-  
+
   "refDevice": {
     "type": "Relationship",
     "object": "urn:ngsi-ld:Device:noise-sensor-barcelona-05",
@@ -230,7 +234,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
       "calibrationDate": "2026-01-15"
     }
   },
-  
+
   "refPointOfInterest": {
     "type": "Relationship",
     "object": "urn:ngsi-ld:PointOfInterest:ES-Barcelona-av-diagonal"
@@ -246,7 +250,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "type": "Property",
     "value": "2026-04-27T14:30:00Z"
   },
-  
+
   "LAeq": {
     "type": "Property",
     "value": 72.5,
@@ -254,7 +258,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Nivel de presión sonora equivalente ponderado A (dB)"
   },
-  
+
   "LAmax": {
     "type": "Property",
     "value": 85.2,
@@ -262,7 +266,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Nivel máximo de presión sonora ponderado A"
   },
-  
+
   "LAmin": {
     "type": "Property",
     "value": 62.1,
@@ -270,7 +274,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Nivel mínimo de presión sonora ponderado A"
   },
-  
+
   "LA90": {
     "type": "Property",
     "value": 68.3,
@@ -278,7 +282,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Nivel percentil 90 (ruido de fondo)"
   },
-  
+
   "LC": {
     "type": "Property",
     "value": 79.1,
@@ -286,7 +290,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Nivel de presión sonora ponderado C (riesgo de daño auditivo)"
   },
-  
+
   "LIN": {
     "type": "Property",
     "value": 80.5,
@@ -294,21 +298,21 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Nivel de presión sonora lineal (sin ponderación)"
   },
-  
+
   "measuringPeriod": {
     "type": "Property",
     "value": 300,
     "unitCode": "SEC",
     "description": "Período de medición en segundos"
   },
-  
+
   "noiseLevel": {
     "type": "Property",
     "value": "MODERATE",
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Clasificación: QUIET (<55dB), MODERATE (55-70dB), LOUD (70-85dB), VERY_LOUD (>85dB)"
   },
-  
+
   "noisePollutionLevel": {
     "type": "Property",
     "value": 72.5,
@@ -316,7 +320,7 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Índice de contaminación acústica (similar a LAeq pero con contexto ambiental)"
   },
-  
+
   "frequency": {
     "type": "Property",
     "value": {
@@ -333,14 +337,14 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Análisis de frecuencias en bandas de octava"
   },
-  
+
   "dominantFrequency": {
     "type": "Property",
     "value": 1000,
     "unitCode": "HZ",
     "observedAt": "2026-04-27T14:30:00Z"
   },
-  
+
   "temperature": {
     "type": "Property",
     "value": 20.3,
@@ -348,14 +352,14 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "observedAt": "2026-04-27T14:30:00Z",
     "description": "Temperatura ambiente (afecta velocidad del sonido)"
   },
-  
+
   "windSpeed": {
     "type": "Property",
     "value": 3.2,
     "unitCode": "M_S",
     "observedAt": "2026-04-27T14:30:00Z"
   },
-  
+
   "timeWeighting": {
     "type": "Property",
     "value": "FAST",
@@ -453,17 +457,17 @@ Si se desea que este documento sea compatible con un catálogo Smart Data Models
     "saref": "https://saref.etsi.org/core/",
     "smartdatamodels": "https://smartdatamodels.org/",
     "sdm-env": "https://smartdatamodels.org/environment/",
-    
+
     "AirQualityObserved": "https://smartdatamodels.org/environment/AirQualityObserved",
     "NoiseLevelObserved": "https://smartdatamodels.org/environment/NoiseLevelObserved",
-    
+
     "CO2": "https://smartdatamodels.org/environment/CO2",
     "PM2_5": "https://smartdatamodels.org/environment/PM2_5",
     "PM10": "https://smartdatamodels.org/environment/PM10",
     "NO2": "https://smartdatamodels.org/environment/NO2",
     "O3": "https://smartdatamodels.org/environment/O3",
     "airQualityIndex": "https://smartdatamodels.org/environment/airQualityIndex",
-    
+
     "LAeq": "https://smartdatamodels.org/environment/LAeq",
     "LAmax": "https://smartdatamodels.org/environment/LAmax",
     "noiseLevel": "https://smartdatamodels.org/environment/noiseLevel"
@@ -490,7 +494,7 @@ Las siguientes entidades se envían automáticamente a QuantumLeap para almacena
 ```
 Topic: /fiware/data/environment/air
 Entity: AirQualityObserved
-Attributes to persist: 
+Attributes to persist:
   - CO2, PM2_5, PM10, NO2, O3
   - temperature, relativeHumidity
   - airQualityIndex, airQualityLevel

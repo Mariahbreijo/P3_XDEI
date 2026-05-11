@@ -6,6 +6,28 @@ const detailState = {
   history: [],
 };
 
+const i18n = () => window.appI18n;
+
+function t(key, params = {}) {
+  return i18n()?.t?.(key, params) ?? key;
+}
+
+function translateAirLevel(code) {
+  return i18n()?.translateAirLevel?.(code) ?? code ?? t("status.noDataShort");
+}
+
+function translateNoiseLevel(code) {
+  return i18n()?.translateNoiseLevel?.(code) ?? code ?? t("status.noDataShort");
+}
+
+function translateRiskLevel(code) {
+  return i18n()?.translateRiskLevel?.(code) ?? code ?? t("status.noDataShort");
+}
+
+function translateWhoLevel(code) {
+  return i18n()?.translateWhoLevel?.(code) ?? code ?? t("status.noDataShort");
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -28,7 +50,7 @@ function toNumber(value) {
 }
 
 function formatNumber(value, digits = 1) {
-  return Number.isFinite(value) ? value.toFixed(digits) : "N/D";
+  return Number.isFinite(value) ? value.toFixed(digits) : t("status.noDataShort");
 }
 
 function ensurePositivePm25(pm25Value, pm10Value) {
@@ -94,28 +116,28 @@ function varyValue(baseValue, variation, seed) {
 }
 
 function classifyAirQuality(value) {
-  if (!Number.isFinite(value)) return "N/D";
-  if (value <= 50) return "Bueno";
-  if (value <= 100) return "Moderado";
-  if (value <= 150) return "Malo";
-  return "Crítico";
+  if (!Number.isFinite(value)) return t("status.noDataShort");
+  if (value <= 50) return translateAirLevel("GOOD");
+  if (value <= 100) return translateAirLevel("MODERATE");
+  if (value <= 150) return translateAirLevel("POOR");
+  return translateAirLevel("VERY_POOR");
 }
 
 function classifyNoiseLevel(value) {
-  if (!Number.isFinite(value)) return "N/D";
-  if (value < 55) return "Silencioso";
-  if (value < 70) return "Moderado";
-  if (value < 85) return "Alto";
-  return "Muy alto";
+  if (!Number.isFinite(value)) return t("status.noDataShort");
+  if (value < 55) return translateNoiseLevel("QUIET");
+  if (value < 70) return translateNoiseLevel("MODERATE");
+  if (value < 85) return translateNoiseLevel("LOUD");
+  return translateNoiseLevel("VERY_LOUD");
 }
 
 function computeWeeklyTrend(firstValue, lastValue) {
   if (!Number.isFinite(firstValue) || !Number.isFinite(lastValue) || firstValue === 0) {
-    return "N/D";
+    return t("status.noDataShort");
   }
 
   const delta = ((lastValue - firstValue) / firstValue) * 100;
-  const direction = delta > 2 ? "al alza" : delta < -2 ? "a la baja" : "estable";
+  const direction = delta > 2 ? t("trend.up") : delta < -2 ? t("trend.down") : t("trend.stable");
   const sign = delta > 0 ? "+" : "";
   return `${direction} (${sign}${delta.toFixed(1)}%)`;
 }
@@ -123,7 +145,7 @@ function computeWeeklyTrend(firstValue, lastValue) {
 function weeklyStats(values) {
   const valid = values.filter((value) => Number.isFinite(value));
   if (!valid.length) {
-    return { average: null, maximum: null, minimum: null, trend: "N/D" };
+    return { average: null, maximum: null, minimum: null, trend: t("status.noDataShort") };
   }
 
   return {
@@ -137,27 +159,27 @@ function weeklyStats(values) {
 function getMetricDefinition(sensor) {
   if (sensorMode(sensor) === "air") {
     return {
-      title: "Calidad del aire",
+      title: t("detail.metricTitle.air"),
       primaryMetric: "ICA",
       metrics: [
         { key: "pm25", label: "PM2.5", unit: "µg/m³", candidates: ["PM2_5", "PM2.5", "pm2_5"] },
         { key: "pm10", label: "PM10", unit: "µg/m³", candidates: ["PM10", "pm10"] },
         { key: "no2", label: "NO2", unit: "µg/m³", candidates: ["NO2", "no2"] },
         { key: "o3", label: "O3", unit: "µg/m³", candidates: ["O3", "o3"] },
-        { key: "ica", label: "ICA", unit: "", candidates: ["ICA", "ica"] },
+        { key: "ica", label: t("labels.airIndex"), unit: "", candidates: ["ICA", "ica"] },
       ],
     };
   }
 
   if (sensorMode(sensor) === "noise") {
     return {
-      title: "Ruido urbano",
+      title: t("detail.metricTitle.noise"),
       primaryMetric: "LAeq",
       metrics: [
         { key: "laeq", label: "LAeq", unit: "dB", candidates: ["LAeq", "laeq"] },
         { key: "lamax", label: "LAmax", unit: "dB", candidates: ["LAmax", "lamax"] },
         { key: "la90", label: "LA90", unit: "dB", candidates: ["LA90", "la90"] },
-        { key: "status", label: "Estado acústico", unit: "", candidates: [] },
+        { key: "status", label: t("detail.acousticStatus"), unit: "", candidates: [] },
       ],
     };
   }
@@ -195,7 +217,15 @@ function getCurrentSensorValues(sensor) {
 function generateWeeklyHistory(sensor) {
   const mode = sensorMode(sensor);
   const baseValues = getCurrentSensorValues(sensor);
-  const dayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const dayNames = [
+    t("days.monday"),
+    t("days.tuesday"),
+    t("days.wednesday"),
+    t("days.thursday"),
+    t("days.friday"),
+    t("days.saturday"),
+    t("days.sunday"),
+  ];
   let seed = hashSeed(sensor?.id || sensor?.source?.id || sensor?.city || sensor?.type || sensor?.rawType);
 
   return dayNames.map((day, index) => {
@@ -254,24 +284,24 @@ function generateWeeklyHistory(sensor) {
       };
     }
 
-    return { day, values: {}, status: "N/D" };
+    return { day, values: {}, status: t("status.noDataShort") };
   });
 }
 
 function chartSeriesConfig(mode) {
   if (mode === "noise") {
     return [
-      { key: "laeq", label: "LAeq", color: "#22d3ee" },
-      { key: "lamax", label: "LAmax", color: "#f97316" },
-      { key: "la90", label: "LA90", color: "#fbbf24" },
+      { key: "laeq", label: t("charts.noise.laeq"), color: "#22d3ee" },
+      { key: "lamax", label: t("charts.noise.lamax"), color: "#f97316" },
+      { key: "la90", label: t("charts.noise.la90"), color: "#fbbf24" },
     ];
   }
 
   return [
-    { key: "pm25", label: "PM2.5", color: "#60a5fa" },
-    { key: "pm10", label: "PM10", color: "#34d399" },
-    { key: "no2", label: "NO2", color: "#f97316" },
-    { key: "o3", label: "O3", color: "#f43f5e" },
+    { key: "pm25", label: t("charts.air.pm25"), color: "#60a5fa" },
+    { key: "pm10", label: t("charts.air.pm10"), color: "#34d399" },
+    { key: "no2", label: t("charts.air.no2"), color: "#f97316" },
+    { key: "o3", label: t("charts.air.o3"), color: "#f43f5e" },
   ];
 }
 
@@ -298,7 +328,7 @@ function alertRank(alert) {
 }
 
 function alertLabel(alert) {
-  return alert === "danger" ? "Peligro" : alert === "warning" ? "Advertencia" : alert === "safe" ? "Seguro" : "N/D";
+  return translateWhoLevel(alert);
 }
 
 function buildChartDatasets(mode, history) {
@@ -321,7 +351,7 @@ function buildChartDatasets(mode, history) {
 }
 
 function currentChartUnit(mode) {
-  return mode === "noise" ? "dB" : "µg/m³";
+  return mode === "noise" ? t("detail.chart.noise") : t("detail.chart.air");
 }
 
 function renderWeeklyChart() {
@@ -398,11 +428,11 @@ function renderWeeklyChart() {
 }
 
 function evaluateRiskLabel(value) {
-  if (!Number.isFinite(value)) return "N/D";
-  if (value <= 50) return "Bajo";
-  if (value <= 100) return "Moderado";
-  if (value <= 150) return "Alto";
-  return "Muy alto";
+  if (!Number.isFinite(value)) return t("status.noDataShort");
+  if (value <= 50) return translateRiskLevel("low");
+  if (value <= 100) return translateRiskLevel("medium");
+  if (value <= 150) return translateRiskLevel("high");
+  return translateRiskLevel("critical");
 }
 
 function worstDayRiskClass(value) {
@@ -444,7 +474,7 @@ function renderWorstDayCard(sensor, history) {
   const worst = extractWorstDay(history, mode);
 
   if (!worst) {
-    container.innerHTML = '<article class="detail-worst-card risk-unknown"><p class="label">Día más perjudicial</p><h5>N/D</h5><p class="detail-empty">No hay datos semanales suficientes.</p></article>';
+    container.innerHTML = `<article class="detail-worst-card risk-unknown"><p class="label">${t("labels.worstDay")}</p><h5>${t("status.noDataShort")}</h5><p class="detail-empty">${t("status.noWeeklyData")}</p></article>`;
     return;
   }
 
@@ -466,11 +496,11 @@ function renderWorstDayCard(sensor, history) {
   container.innerHTML = `
     <article class="detail-worst-card ${riskClass}">
       <div class="detail-worst-head">
-        <p class="label">Día más perjudicial</p>
-        <span class="detail-worst-risk">Riesgo ${escapeHtml(riskLabel)}</span>
+        <p class="label">${t("labels.worstDay")}</p>
+        <span class="detail-worst-risk">${escapeHtml(t("detail.risk", { level: riskLabel }))}</span>
       </div>
-      <h5>${escapeHtml(worst.day || "N/D")}</h5>
-      <p class="detail-worst-score">ICA ${mode === "noise" ? "equiv." : ""}: <strong>${escapeHtml(formatNumber(worst.score, 0))}</strong></p>
+      <h5>${escapeHtml(worst.day || t("status.noDataShort"))}</h5>
+      <p class="detail-worst-score">${escapeHtml(t("labels.airIndex"))} ${mode === "noise" ? `${escapeHtml(t("detail.alert"))}: ` : ""}<strong>${escapeHtml(formatNumber(worst.score, 0))}</strong></p>
       <div class="detail-worst-metrics">
         ${metrics.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}
       </div>
@@ -479,7 +509,7 @@ function renderWorstDayCard(sensor, history) {
 }
 
 function renderMetricCard(key, label, value, unit, extraClass = "") {
-  const displayValue = Number.isFinite(value) ? formatNumber(value, key === "ica" ? 0 : 1) : "N/D";
+  const displayValue = Number.isFinite(value) ? formatNumber(value, key === "ica" ? 0 : 1) : t("status.noDataShort");
   const unitLabel = unit ? ` ${unit}` : "";
   const alert = whoAlertLevel(key, value);
   const badge = alert === "unknown" ? "" : `<span class="kpi-badge kpi-${alert}">${escapeHtml(alertLabel(alert))}</span>`;
@@ -500,19 +530,19 @@ function renderDetailKpis(sensor) {
   const current = getCurrentSensorValues(sensor);
 
   if (!definition.metrics.length) {
-    grid.innerHTML = '<article class="detail-card detail-empty">N/D</article>';
+    grid.innerHTML = `<article class="detail-card detail-empty">${t("status.noDataShort")}</article>`;
     return;
   }
 
   const cards = definition.metrics.map((metric) => {
     if (metric.key === "status") {
-      const statusValue = sensorMode(sensor) === "noise" ? (current.status || "N/D") : "N/D";
+      const statusValue = sensorMode(sensor) === "noise" ? (current.status || t("status.noDataShort")) : t("status.noDataShort");
       const alert = whoAlertLevel("laeq", current.laeq);
       const badge = alert === "unknown" ? "" : `<span class="kpi-badge kpi-${alert}">${escapeHtml(alertLabel(alert))}</span>`;
       return `
         <article class="detail-kpi-card detail-kpi-status">
           <p class="label">${escapeHtml(metric.label)} ${badge}</p>
-          <strong>${escapeHtml(statusValue || "N/D")}</strong>
+          <strong>${escapeHtml(statusValue)}</strong>
         </article>
       `;
     }
@@ -528,7 +558,7 @@ function renderWeeklySummary(sensor, history) {
   if (!summary) return;
 
   const mode = sensorMode(sensor);
-  const metricName = mode === "air" ? "ICA" : mode === "noise" ? "LAeq" : "Métrica";
+  const metricName = mode === "air" ? t("labels.airIndex") : mode === "noise" ? "LAeq" : t("status.noDataShort");
   const values = history.map((entry) => {
     if (mode === "air") return entry.values.ica;
     if (mode === "noise") return entry.values.laeq;
@@ -536,17 +566,17 @@ function renderWeeklySummary(sensor, history) {
   });
   const stats = weeklyStats(values);
   const cards = [
-    ["Promedio", stats.average, mode === "air" ? "ICA" : "dB"],
-    ["Máximo", stats.maximum, mode === "air" ? "ICA" : "dB"],
-    ["Mínimo", stats.minimum, mode === "air" ? "ICA" : "dB"],
-    ["Tendencia", stats.trend, ""],
+    [t("detail.avg"), stats.average, mode === "air" ? t("labels.airIndex") : t("detail.chart.noise")],
+    [t("detail.max"), stats.maximum, mode === "air" ? t("labels.airIndex") : t("detail.chart.noise")],
+    [t("detail.min"), stats.minimum, mode === "air" ? t("labels.airIndex") : t("detail.chart.noise")],
+    [t("detail.trend"), stats.trend, ""],
   ];
 
   summary.innerHTML = cards
     .map(([label, value, unit]) => `
       <article class="detail-summary-card">
         <p class="label">${escapeHtml(label)} ${escapeHtml(metricName)}</p>
-        <strong>${Number.isFinite(value) ? escapeHtml(formatNumber(value, mode === "air" ? 0 : 1)) : escapeHtml(String(value || "N/D"))}${unit ? ` <span>${escapeHtml(unit)}</span>` : ""}</strong>
+        <strong>${Number.isFinite(value) ? escapeHtml(formatNumber(value, mode === "air" ? 0 : 1)) : escapeHtml(String(value || t("status.noDataShort")))}${unit ? ` <span>${escapeHtml(unit)}</span>` : ""}</strong>
       </article>
     `)
     .join("");
@@ -563,13 +593,13 @@ function renderWeeklyHistory(sensor, history) {
         <table class="detail-history-table">
           <thead>
             <tr>
-              <th>Día</th>
+              <th>${t("detail.day")}</th>
               <th>PM2.5</th>
               <th>PM10</th>
               <th>NO2</th>
               <th>O3</th>
-              <th>ICA</th>
-              <th>Estado</th>
+              <th>${t("labels.airIndex")}</th>
+              <th>${t("detail.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -601,11 +631,11 @@ function renderWeeklyHistory(sensor, history) {
         <table class="detail-history-table">
           <thead>
             <tr>
-              <th>Día</th>
+              <th>${t("detail.day")}</th>
               <th>LAeq</th>
               <th>LAmax</th>
               <th>LA90</th>
-              <th>Estado acústico</th>
+              <th>${t("detail.acousticStatus")}</th>
             </tr>
           </thead>
           <tbody>
@@ -629,7 +659,7 @@ function renderWeeklyHistory(sensor, history) {
     return;
   }
 
-  container.innerHTML = '<p class="detail-empty">N/D</p>';
+  container.innerHTML = `<p class="detail-empty">${t("status.noDataShort")}</p>`;
 }
 
 function clearDetailExtras() {
@@ -639,10 +669,10 @@ function clearDetailExtras() {
   const worstDay = $("#detail-worst-day");
   const chartCanvas = $("#detail-weekly-chart");
 
-  if (kpiGrid) kpiGrid.innerHTML = '<article class="detail-card detail-empty">N/D</article>';
-  if (weeklySummary) weeklySummary.innerHTML = '<article class="detail-summary-card"><strong>N/D</strong></article>';
-  if (weeklyHistory) weeklyHistory.innerHTML = '<p class="detail-empty">N/D</p>';
-  if (worstDay) worstDay.innerHTML = '<article class="detail-worst-card risk-unknown"><p class="label">Día más perjudicial</p><h5>N/D</h5></article>';
+  if (kpiGrid) kpiGrid.innerHTML = `<article class="detail-card detail-empty">${t("status.noDataShort")}</article>`;
+  if (weeklySummary) weeklySummary.innerHTML = `<article class="detail-summary-card"><strong>${t("status.noDataShort")}</strong></article>`;
+  if (weeklyHistory) weeklyHistory.innerHTML = `<p class="detail-empty">${t("status.noDataShort")}</p>`;
+  if (worstDay) worstDay.innerHTML = `<article class="detail-worst-card risk-unknown"><p class="label">${t("labels.worstDay")}</p><h5>${t("status.noDataShort")}</h5></article>`;
   const omsBanner = $("#detail-oms-banner");
   const healthRecs = $("#detail-health-recommendations");
   if (omsBanner) omsBanner.innerHTML = "";
@@ -674,8 +704,8 @@ function findAttribute(entity, candidates) {
 
 function sensorTypeLabel(sensor) {
   if (!sensor) return "--";
-  if (sensor.category === "air") return "Calidad del aire";
-  if (sensor.category === "noise") return "Ruido urbano";
+  if (sensor.category === "air") return t("labels.airQuality");
+  if (sensor.category === "noise") return t("labels.urbanNoise");
   return String(sensor.rawType || sensor.type || "Sensor");
 }
 
@@ -705,7 +735,7 @@ function renderSensorDetail() {
   if (!nameEl || !cityEl || !typeEl) return;
 
   if (!sensor) {
-    nameEl.textContent = "Selecciona un sensor";
+    nameEl.textContent = t("status.selectSensor");
     cityEl.textContent = "--";
     typeEl.textContent = "--";
     clearDetailExtras();
@@ -751,15 +781,15 @@ function renderOmsBanner(sensor, current) {
   if (!container) return;
   const overall = computeOverallWhoAlert(sensor, current);
   const cls = overall.level === "danger" ? "oms-danger" : overall.level === "warning" ? "oms-warning" : overall.level === "safe" ? "oms-safe" : "oms-unknown";
-  const metricLabel = overall.key ? (overall.key === "pm25" ? "PM2.5" : overall.key === "pm10" ? "PM10" : overall.key === "no2" ? "NO2" : overall.key === "o3" ? "O3" : overall.key === "laeq" ? "LAeq" : overall.key) : "métrica";
+  const metricLabel = overall.key ? (overall.key === "pm25" ? "PM2.5" : overall.key === "pm10" ? "PM10" : overall.key === "no2" ? "NO2" : overall.key === "o3" ? "O3" : overall.key === "laeq" ? "LAeq" : overall.key) : t("detail.metric");
 
-  let message = "N/D";
+  let message = t("status.noDataShort");
   if (overall.level === "safe") {
-    message = `La concentración de ${metricLabel} actualmente cumple con la directriz de la OMS.`;
+    message = t("status.metricSafe", { metric: metricLabel });
   } else if (overall.level === "warning") {
-    message = `Advertencia: ${metricLabel} está por encima del límite OMS.`;
+    message = t("status.metricWarning", { metric: metricLabel });
   } else if (overall.level === "danger") {
-    message = `Peligro: ${metricLabel} supera ampliamente el límite OMS.`;
+    message = t("status.metricDanger", { metric: metricLabel });
   }
 
   container.innerHTML = `
@@ -777,55 +807,55 @@ function determineRecommendations(overall, mode) {
   if (mode === "noise") {
     if (level === "danger") {
       return [
-        { icon: "🔇", text: "Evitar zonas con tráfico intenso y focos de ruido" },
-        { icon: "🎧", text: "Usar protección auditiva en exteriores prolongados" },
-        { icon: "🪟", text: "Cerrar ventanas y reducir fuentes de ruido en casa" },
-        { icon: "⏰", text: "Limitar el tiempo de exposición continua al ruido" },
+        { icon: "🔇", text: t("recommendations.noise.danger.0") },
+        { icon: "🎧", text: t("recommendations.noise.danger.1") },
+        { icon: "🪟", text: t("recommendations.noise.danger.2") },
+        { icon: "⏰", text: t("recommendations.noise.danger.3") },
       ];
     }
 
     if (level === "warning") {
       return [
-        { icon: "🔉", text: "Reducir permanencia en áreas ruidosas" },
-        { icon: "🏠", text: "Priorizar actividades en interiores silenciosos" },
-        { icon: "🌙", text: "Evitar exposición a ruido durante la noche" },
+        { icon: "🔉", text: t("recommendations.noise.warning.0") },
+        { icon: "🏠", text: t("recommendations.noise.warning.1") },
+        { icon: "🌙", text: t("recommendations.noise.warning.2") },
       ];
     }
 
     return [
-      { icon: "✅", text: "Actividad normal en entorno acústico aceptable" },
-      { icon: "🌿", text: "Priorizar rutas y zonas urbanas tranquilas" },
-      { icon: "😴", text: "Mantener buena higiene del sueño en ambientes silenciosos" },
+      { icon: "✅", text: t("recommendations.noise.safe.0") },
+      { icon: "🌿", text: t("recommendations.noise.safe.1") },
+      { icon: "😴", text: t("recommendations.noise.safe.2") },
     ];
   }
 
   if (mode === "air") {
     if (level === "danger") {
       return [
-        { icon: "🏃‍♂️", text: "Evitar ejercicio exterior" },
-        { icon: "🪟", text: "Cerrar ventanas" },
-        { icon: "😷", text: "Usar mascarilla en exteriores" },
-        { icon: "🫧", text: "Usar purificador de aire" },
+        { icon: "🏃‍♂️", text: t("recommendations.air.danger.0") },
+        { icon: "🪟", text: t("recommendations.air.danger.1") },
+        { icon: "😷", text: t("recommendations.air.danger.2") },
+        { icon: "🫧", text: t("recommendations.air.danger.3") },
       ];
     }
 
     if (level === "warning") {
       return [
-        { icon: "🚶‍♀️", text: "Evitar ejercicio intenso al aire libre" },
-        { icon: "🪟", text: "Ventilar en horas de menor tráfico" },
-        { icon: "😷", text: "Considerar mascarilla en trayectos largos" },
+        { icon: "🚶‍♀️", text: t("recommendations.air.warning.0") },
+        { icon: "🪟", text: t("recommendations.air.warning.1") },
+        { icon: "😷", text: t("recommendations.air.warning.2") },
       ];
     }
 
     return [
-      { icon: "✅", text: "Actividad normal si niveles bajos" },
-      { icon: "🚴‍♀️", text: "Disfrutar actividades al aire libre" },
-      { icon: "🪟", text: "Abrir ventanas para ventilar" },
+      { icon: "✅", text: t("recommendations.air.safe.0") },
+      { icon: "🚴‍♀️", text: t("recommendations.air.safe.1") },
+      { icon: "🪟", text: t("recommendations.air.safe.2") },
     ];
   }
 
   return [
-    { icon: "ℹ️", text: "Sin datos suficientes para recomendaciones específicas" },
+    { icon: "ℹ️", text: t("recommendations.air.unknown.0") },
   ];
 }
 
@@ -838,7 +868,7 @@ function renderHealthRecommendations(sensor, current) {
   container.innerHTML = `
     <section class="health-recs">
       <div class="health-recs-panel">
-        <h4>Recomendaciones de salud</h4>
+        <h4>${t("detail.recommendations")}</h4>
         <div class="health-recs-list">
           ${recs
             .map((r) => `
@@ -876,6 +906,12 @@ function initSensorDetail() {
 
   window.addEventListener("fiware:view-changed", (event) => {
     if (event?.detail?.view === "detail") {
+      renderSensorDetail();
+    }
+  });
+
+  window.addEventListener("fiware:locale-changed", () => {
+    if (document.body.dataset.activeView === "detail") {
       renderSensorDetail();
     }
   });
