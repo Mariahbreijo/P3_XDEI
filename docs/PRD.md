@@ -54,6 +54,17 @@ La vista `Detalle de sensor` se ha ampliado con capacidades analíticas y de sal
 
 ## 2. DESCRIPCIÓN DE LA SOLUCIÓN
 
+## NOTAS DE IMPLEMENTACIÓN RECIENTES
+
+- El frontend es una aplicación estática basada en módulos ES (vanilla JS), HTML y CSS — no React/TypeScript en la implementación actual.
+- Se actualizó el título de la página a "Centro de Monitorización Ambiental" y se añadió un subtítulo descriptivo para claridad.
+- La tipografía del título usa ahora la familia `Rubik` y un estilo con gradiente para mejorar presencia visual.
+- El `topnav` se hizo más prominente; el botón directo "Detalle sensor" fue retirado del topbar (la vista `detail` permanece accesible desde el mapa).
+- El conmutador de tema muestra emoji (☀️/🌙) y se corrigieron contrastes en modo oscuro.
+- El mapa avanzado centra por defecto en España (`setView([43.0, -3.7], 5)`) y las tooltips/popups muestran la zona extraída del `id` de la entidad (p. ej. `Madrid-Centro-01`).
+- Se redujo la escala base del UI (`html { font-size: 15px; }`) para mejor ajuste visual en zoom 100%.
+
+
 ### 2.1 Componentes Principales
 
 #### Stack FIWARE
@@ -75,7 +86,7 @@ Sensor IoT → IoT Agent (HTTP) → Orion-LD Context Broker → QuantumLeap → 
 | **Backend** | API REST | FastAPI + Python | Procesamiento y lógica de negocio |
 | **ML/Analytics** | Data Science | Pandas, GeoPandas, Scikit-learn, TensorFlow | Predicción y análisis |
 | **IA** | Agent LLM | OpenAI/LLaMA | Interpretación de métricas |
-| **Frontend** | Dashboard | React 18 + TypeScript | Interfaz web responsiva |
+| **Frontend** | Dashboard | Vanilla JS (ES modules), HTML/CSS | Interfaz web responsiva (implementación actual)
 | **Visualización** | Mapas | Leaflet + OpenStreetMap | Geolocalización de sensores |
 | **Gráficos** | Analytics | ChartJS | Series temporales y análisis |
 | **3D** | Experimental | ThreeJS | Visualización inmersiva (futuro) |

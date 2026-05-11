@@ -107,6 +107,21 @@ function extractCity(entity) {
   return String(address.addressLocality || address.addressRegion || address.addressCountry || "").trim() || null;
 }
 
+function extractZone(entity) {
+  if (!entity) return null;
+  const id = entity.id;
+  if (typeof id === "string") {
+    const parts = id.split(":");
+    const last = parts[parts.length - 1];
+    if (last && last.trim()) return String(last).trim();
+  }
+
+  const nameAttr = readNgsiValue(findAttribute(entity, ["name", "label", "title"]));
+  if (nameAttr) return String(nameAttr);
+
+  return null;
+}
+
 function extractCoordinates(entity) {
   const rawLocation = readNgsiValue(findAttribute(entity, ["location"]));
   const coordinates = rawLocation?.coordinates ?? rawLocation?.value?.coordinates ?? null;
@@ -144,6 +159,7 @@ function parseSensorEntities(entities) {
     if (!coordinates) continue;
 
     const city = extractCity(entity) || "Sin ciudad";
+    const zone = extractZone(entity) || city;
     const pm10 = toNumber(readNgsiValue(findAttribute(entity, ["PM10", "pm10"]))) ?? null;
     const pm25 = toNumber(readNgsiValue(findAttribute(entity, ["PM2_5", "PM2.5", "pm2_5"]))) ?? null;
     const no2 = toNumber(readNgsiValue(findAttribute(entity, ["NO2", "no2"]))) ?? null;
@@ -158,6 +174,7 @@ function parseSensorEntities(entities) {
       rawType: entity.type,
       category: isAir ? "air" : "noise",
       city,
+      zone,
       coordinates,
       timestamp: extractTimestamp(entity),
       source: entity,
@@ -190,7 +207,7 @@ function renderSensorPopup(sensor) {
 
   return `
     <div class="sensor-popup">
-      <h4>${escapeHtml(sensor.city)}</h4>
+      <h4>${escapeHtml(sensor.zone || sensor.city)}</h4>
       <p>${escapeHtml(title)}</p>
       <p><strong>Estado:</strong> ${escapeHtml(sensor.status)}</p>
       <p><strong>Timestamp:</strong> ${escapeHtml(sensor.timestamp)}</p>
@@ -257,7 +274,7 @@ function buildAirLayer(sensor, selectedCity) {
     riseOnHover: true,
   });
 
-  marker.bindTooltip(`${sensor.city} · Aire`, {
+  marker.bindTooltip(`${sensor.zone || sensor.city} · Aire`, {
     direction: "top",
     sticky: true,
     className: "sensor-tooltip",
@@ -288,7 +305,7 @@ function buildNoiseLayer(sensor, selectedCity) {
     riseOnHover: true,
   });
 
-  marker.bindTooltip(`${sensor.city} · Ruido`, {
+  marker.bindTooltip(`${sensor.zone || sensor.city} · Ruido`, {
     direction: "top",
     sticky: true,
     className: "sensor-tooltip",
@@ -318,7 +335,7 @@ function ensureMap() {
   const map = L.map("advanced-map", {
     zoomControl: true,
     scrollWheelZoom: true,
-  }).setView([40.4168, -3.7038], 5);
+  }).setView([43.0, -3.7], 5);
 
   const baseLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -556,7 +573,7 @@ async function initAdvancedMap() {
 window.addEventListener("fiware:view-changed", (event) => {
   if (event?.detail?.view === "advanced") {
     if (advancedMapState.map) {
-      advancedMapState.map.setView([40.4168, -3.7038], 6);
+      advancedMapState.map.setView([43.0, -3.7], 5);
     }
     resizeAdvancedMap();
   }

@@ -49,6 +49,16 @@ Decisión arquitectónica: la lógica OMS y recomendaciones reside en frontend p
 
 ## Componentes e integraciones
 
+### Notas de implementación recientes (frontend)
+
+- `title` y subtítulo: el sitio muestra ahora "Centro de Monitorización Ambiental" con tipografía `Rubik` en el encabezado para una apariencia más moderna.
+- `topnav` actualizado: botones más prominentes; se eliminó el botón "Detalle sensor" del topbar para simplificar la navegación (la vista `detail` sigue disponible desde el mapa).
+- Tema: el toggle de tema incluye emoji y mantiene contraste correcto en modo oscuro.
+- Zona en tooltips: el frontend extrae la zona/barrio del `id` de la entidad NGSI-LD y la muestra en tooltips y popups (ej. `Madrid-Centro-01`).
+- Map centering: el mapa avanzado se inicia con `setView([43.0, -3.7], 5)` para centrar en España conservando contexto europeo.
+- UI scale: se ajustó `html { font-size: 15px; }` y paddings para que la interfaz se vea bien al 100% de zoom en navegadores comunes.
+
+
 - Backend (FastAPI): expone endpoints en `/api/v1`:
   - `/health`
   - `/sensors`

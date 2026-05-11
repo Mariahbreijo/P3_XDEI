@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart Air & Noise Monitor</title>
+    <title>Centro de Monitorización Ambiental</title>
     <link rel="stylesheet" href="./styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet" />
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -30,13 +31,13 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">FIWARE · NGSI-LD · Smart Data Models</p>
-        <h1>Smart Air & Noise Monitor</h1>
+        <h1>Centro de Monitorización Ambiental</h1>
+        <p class="site-subtitle">Análisis integral de calidad del aire y contaminación acústica</p>
       </div>
       <div class="topbar-actions">
         <nav class="topnav" aria-label="Navegación principal">
           <button class="topnav-tab is-active" type="button" data-view-target="main">Panel principal</button>
           <button class="topnav-tab" type="button" data-view-target="advanced">Mapa avanzado</button>
-          <button class="topnav-tab" type="button" data-view-target="detail">Detalle sensor</button>
         </nav>
         <button id="theme-toggle" class="ghost-button" type="button" aria-pressed="false" aria-label="Alternar tema">Modo claro</button>
         <div class="topbar-pills">
@@ -314,7 +315,12 @@
       function applyTheme(theme) {
         if (theme === 'light') body.classList.add('theme-light'); else body.classList.remove('theme-light');
         if (btn) {
-          btn.textContent = theme === 'light' ? 'Modo oscuro' : 'Modo claro';
+          // Show emoji for current mode: sun for light, moon for dark
+          if (theme === 'light') {
+            btn.textContent = '☀️ Modo claro';
+          } else {
+            btn.textContent = '🌙 Modo oscuro';
+          }
           btn.setAttribute('aria-pressed', theme === 'light');
         }
       }

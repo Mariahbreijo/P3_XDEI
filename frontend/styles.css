@@ -14,6 +14,11 @@
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
 }
 
+/* Reduce overall visual size slightly for default browser 100% */
+html {
+  font-size: 15px;
+}
+
 body.theme-light {
   --bg: #f7fafc;
   --bg-2: #eef2f7;
@@ -52,7 +57,7 @@ body {
 
 body {
   position: relative;
-  padding: 28px;
+  padding: 18px;
 }
 
 .backdrop {
@@ -88,6 +93,13 @@ body {
   font-size: 0.72rem;
 }
 
+.site-subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+  max-width: 48ch;
+}
+
 h1,
 h2,
 h3,
@@ -99,6 +111,29 @@ p {
 h1 {
   font-size: clamp(2rem, 4vw, 3.8rem);
   line-height: 0.95;
+}
+
+/* Innovative title styling */
+.topbar h1 {
+  font-family: 'Rubik', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  font-weight: 700;
+  background: linear-gradient(90deg, #06b6d4 0%, #7c3aed 55%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.01em;
+  text-shadow: 0 8px 20px rgba(12, 18, 28, 0.28);
+  transition: transform 200ms ease, filter 200ms ease;
+}
+.topbar h1:hover {
+  transform: translateY(-3px) scale(1.02);
+  filter: saturate(1.08) contrast(1.02);
+}
+
+/* Ensure legibility in light theme */
+body.theme-light .topbar h1 {
+  -webkit-text-stroke: 0.4px rgba(3,16,39,0.12);
+  text-shadow: none;
 }
 
 .lead {
@@ -116,20 +151,23 @@ h1 {
   justify-content: flex-end;
 }
 
-.topnav {
-  display: inline-flex;
-  gap: 8px;
-  padding: 6px;
-  border-radius: 999px;
-  border: 1px solid var(--card-border);
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px);
-}
-
 .topnav-tab {
   border: 0;
-  border-radius: 999px;
-  padding: 10px 16px;
+  border-radius: 12px;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.topnav-tab:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 26px rgba(2,6,23,0.18);
+}
   background: transparent;
   color: var(--muted);
   font: inherit;
@@ -143,8 +181,21 @@ h1 {
 }
 
 .topnav-tab.is-active {
-  background: rgba(96, 165, 250, 0.18);
+  background: linear-gradient(180deg, rgba(96,165,250,0.26), rgba(96,165,250,0.12));
   color: var(--text);
+  box-shadow: 0 10px 30px rgba(96,165,250,0.12);
+  font-weight: 800;
+  border: 1px solid rgba(96,165,250,0.22);
+}
+
+/* a slightly different look for non-active so pills remain visually separate */
+.topnav .pill-like {
+  background: transparent;
+}
+
+/* In light theme, use dark text for the active tab */
+body.theme-light .topnav-tab.is-active {
+  color: #031027;
 }
 
 .topbar-pills {

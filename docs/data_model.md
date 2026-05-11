@@ -15,6 +15,8 @@ Nota: En la versión actual se generan múltiples sensores por ciudad y por barr
 - Entidad: `urn:ngsi-ld:<Type>:ES-<City>-<Neighborhood>-<NN>` (ej. `urn:ngsi-ld:AirQualityObserved:ES-Madrid-Centro-01`)
 - Dispositivo / device_id (IoT Agent): `<type>-sensor-<city>-<neighborhood>-<NN>` (ej. `air-sensor-madrid-centro-01`)
 
+Nota adicional: el frontend extrae el nombre de la zona/barrio directamente del `id` de la entidad cuando está disponible (p. ej. `Madrid-Centro-01`) y lo muestra en tooltips y popups del mapa para ayudar a la identificación rápida de ubicaciones.
+
 Cada dispositivo provisionado incluye `static_attributes.location` (GeoProperty) con coordenadas ligeramente diferentes por sensor dentro de la misma zona para permitir clustering en el frontend.
 
 ## 3. Entidades usadas en el repositorio
