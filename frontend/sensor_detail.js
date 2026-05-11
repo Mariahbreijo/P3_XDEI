@@ -1,5 +1,11 @@
 const $ = (selector) => document.querySelector(selector);
 
+const detailState = {
+  chart: null,
+  mode: "air",
+  history: [],
+};
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -252,6 +258,200 @@ function generateWeeklyHistory(sensor) {
   });
 }
 
+function chartSeriesConfig(mode) {
+  if (mode === "noise") {
+    return [
+      { key: "laeq", label: "LAeq", color: "#22d3ee" },
+      { key: "lamax", label: "LAmax", color: "#f97316" },
+      { key: "la90", label: "LA90", color: "#fbbf24" },
+    ];
+  }
+
+  return [
+    { key: "pm25", label: "PM2.5", color: "#60a5fa" },
+    { key: "pm10", label: "PM10", color: "#34d399" },
+    { key: "no2", label: "NO2", color: "#f97316" },
+    { key: "o3", label: "O3", color: "#f43f5e" },
+  ];
+}
+
+function buildChartDatasets(mode, history) {
+  return chartSeriesConfig(mode).map((series) => ({
+    label: series.label,
+    data: history.map((entry) => {
+      const value = entry?.values?.[series.key];
+      return Number.isFinite(value) ? Number(value.toFixed(2)) : null;
+    }),
+    borderColor: series.color,
+    backgroundColor: `${series.color}33`,
+    borderWidth: 2.4,
+    tension: 0.35,
+    pointRadius: 2.5,
+    pointHoverRadius: 5.5,
+    pointHitRadius: 16,
+    spanGaps: true,
+    fill: false,
+  }));
+}
+
+function currentChartUnit(mode) {
+  return mode === "noise" ? "dB" : "µg/m³";
+}
+
+function renderWeeklyChart() {
+  const canvas = $("#detail-weekly-chart");
+  if (!canvas || typeof window.Chart !== "function") return;
+
+  const mode = detailState.mode || "air";
+  const history = Array.isArray(detailState.history) ? detailState.history : [];
+  const labels = history.map((entry) => entry.day || "--");
+  const datasets = buildChartDatasets(mode, history);
+
+  if (detailState.chart) {
+    detailState.chart.data.labels = labels;
+    detailState.chart.data.datasets = datasets;
+    detailState.chart.options.scales.y.title.text = currentChartUnit(mode);
+    detailState.chart.update();
+    return;
+  }
+
+  const context = canvas.getContext("2d");
+  detailState.chart = new window.Chart(context, {
+    type: "line",
+    data: {
+      labels,
+      datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 650,
+        easing: "easeOutQuart",
+      },
+      interaction: {
+        mode: "index",
+        intersect: false,
+      },
+      plugins: {
+        legend: {
+          position: "top",
+          labels: {
+            color: "#f4f7fb",
+            boxWidth: 16,
+            usePointStyle: true,
+            pointStyle: "circle",
+          },
+        },
+        tooltip: {
+          enabled: true,
+          backgroundColor: "rgba(7, 14, 28, 0.94)",
+          borderColor: "rgba(255,255,255,0.12)",
+          borderWidth: 1,
+          padding: 10,
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: "#a8b3c8" },
+          grid: { color: "rgba(255,255,255,0.06)" },
+        },
+        y: {
+          ticks: { color: "#a8b3c8" },
+          grid: { color: "rgba(255,255,255,0.06)" },
+          title: {
+            display: true,
+            text: currentChartUnit(mode),
+            color: "#a8b3c8",
+          },
+          beginAtZero: true,
+        },
+      },
+    },
+  });
+}
+
+function evaluateRiskLabel(value) {
+  if (!Number.isFinite(value)) return "N/D";
+  if (value <= 50) return "Bajo";
+  if (value <= 100) return "Moderado";
+  if (value <= 150) return "Alto";
+  return "Muy alto";
+}
+
+function worstDayRiskClass(value) {
+  if (!Number.isFinite(value)) return "risk-unknown";
+  if (value <= 50) return "risk-low";
+  if (value <= 100) return "risk-medium";
+  if (value <= 150) return "risk-high";
+  return "risk-critical";
+}
+
+function toIcaEquivalentFromNoise(laeq) {
+  if (!Number.isFinite(laeq)) return null;
+  return Math.round(Math.min((laeq / 85) * 180, 200));
+}
+
+function extractWorstDay(history, mode) {
+  const validEntries = history
+    .map((entry) => {
+      const score = mode === "noise"
+        ? toIcaEquivalentFromNoise(entry?.values?.laeq)
+        : entry?.values?.ica;
+      return {
+        ...entry,
+        score: Number.isFinite(score) ? score : null,
+      };
+    })
+    .filter((entry) => Number.isFinite(entry.score));
+
+  if (!validEntries.length) return null;
+
+  return validEntries.reduce((worst, current) => (current.score > worst.score ? current : worst));
+}
+
+function renderWorstDayCard(sensor, history) {
+  const container = $("#detail-worst-day");
+  if (!container) return;
+
+  const mode = sensorMode(sensor) === "noise" ? "noise" : "air";
+  const worst = extractWorstDay(history, mode);
+
+  if (!worst) {
+    container.innerHTML = '<article class="detail-worst-card risk-unknown"><p class="label">Día más perjudicial</p><h5>N/D</h5><p class="detail-empty">No hay datos semanales suficientes.</p></article>';
+    return;
+  }
+
+  const riskLabel = evaluateRiskLabel(worst.score);
+  const riskClass = worstDayRiskClass(worst.score);
+  const metrics = mode === "noise"
+    ? [
+        ["LAeq", `${formatNumber(worst.values.laeq)} dB`],
+        ["LAmax", `${formatNumber(worst.values.lamax)} dB`],
+        ["LA90", `${formatNumber(worst.values.la90)} dB`],
+      ]
+    : [
+        ["PM2.5", `${formatNumber(worst.values.pm25)} µg/m³`],
+        ["PM10", `${formatNumber(worst.values.pm10)} µg/m³`],
+        ["NO2", `${formatNumber(worst.values.no2)} µg/m³`],
+        ["O3", `${formatNumber(worst.values.o3)} µg/m³`],
+      ];
+
+  container.innerHTML = `
+    <article class="detail-worst-card ${riskClass}">
+      <div class="detail-worst-head">
+        <p class="label">Día más perjudicial</p>
+        <span class="detail-worst-risk">Riesgo ${escapeHtml(riskLabel)}</span>
+      </div>
+      <h5>${escapeHtml(worst.day || "N/D")}</h5>
+      <p class="detail-worst-score">ICA ${mode === "noise" ? "equiv." : ""}: <strong>${escapeHtml(formatNumber(worst.score, 0))}</strong></p>
+      <div class="detail-worst-metrics">
+        ${metrics.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}
+      </div>
+    </article>
+  `;
+}
+
 function renderMetricCard(metric, value, unit, extraClass = "") {
   const displayValue = Number.isFinite(value) ? formatNumber(value, metric === "ica" ? 0 : 1) : "N/D";
   const unitLabel = unit ? ` ${unit}` : "";
@@ -405,10 +605,23 @@ function clearDetailExtras() {
   const kpiGrid = $("#detail-kpi-grid");
   const weeklySummary = $("#detail-weekly-summary");
   const weeklyHistory = $("#detail-weekly-history");
+  const worstDay = $("#detail-worst-day");
+  const chartCanvas = $("#detail-weekly-chart");
 
   if (kpiGrid) kpiGrid.innerHTML = '<article class="detail-card detail-empty">N/D</article>';
   if (weeklySummary) weeklySummary.innerHTML = '<article class="detail-summary-card"><strong>N/D</strong></article>';
   if (weeklyHistory) weeklyHistory.innerHTML = '<p class="detail-empty">N/D</p>';
+  if (worstDay) worstDay.innerHTML = '<article class="detail-worst-card risk-unknown"><p class="label">Día más perjudicial</p><h5>N/D</h5></article>';
+  if (detailState.chart) {
+    detailState.chart.destroy();
+    detailState.chart = null;
+  }
+  detailState.history = [];
+  detailState.mode = "air";
+  if (chartCanvas) {
+    const context = chartCanvas.getContext("2d");
+    if (context) context.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+  }
 }
 
 function findAttribute(entity, candidates) {
@@ -469,8 +682,12 @@ function renderSensorDetail() {
   typeEl.textContent = sensorTypeLabel(sensor);
 
   const history = generateWeeklyHistory(sensor);
+  detailState.history = history;
+  detailState.mode = sensorMode(sensor) === "noise" ? "noise" : "air";
   renderDetailKpis(sensor);
   renderWeeklySummary(sensor, history);
+  renderWeeklyChart();
+  renderWorstDayCard(sensor, history);
   renderWeeklyHistory(sensor, history);
 }
 

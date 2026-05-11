@@ -410,6 +410,113 @@ body[data-active-view="advanced"] .view-advanced {
   gap: 12px;
 }
 
+.detail-chart-panel {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 12px;
+}
+
+.detail-chart-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 320px;
+}
+
+#detail-weekly-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.detail-worst-day {
+  margin-top: 2px;
+}
+
+.detail-worst-card {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  display: grid;
+  gap: 10px;
+}
+
+.detail-worst-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detail-worst-head h5,
+.detail-worst-card h5 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.detail-worst-risk {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.detail-worst-score {
+  margin: 0;
+  color: var(--muted);
+}
+
+.detail-worst-score strong {
+  color: var(--text);
+}
+
+.detail-worst-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.detail-worst-metrics div {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.detail-worst-metrics strong {
+  color: var(--text);
+}
+
+.detail-worst-card.risk-low {
+  border-color: rgba(45, 212, 191, 0.4);
+  background: linear-gradient(180deg, rgba(45, 212, 191, 0.2), rgba(255, 255, 255, 0.03));
+}
+
+.detail-worst-card.risk-medium {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.2), rgba(255, 255, 255, 0.03));
+}
+
+.detail-worst-card.risk-high {
+  border-color: rgba(249, 115, 22, 0.4);
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.18), rgba(255, 255, 255, 0.03));
+}
+
+.detail-worst-card.risk-critical {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.2), rgba(255, 255, 255, 0.03));
+}
+
+.detail-worst-card.risk-unknown {
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
 .detail-summary-card strong span {
   color: var(--muted);
   font-size: 0.82em;
@@ -675,6 +782,14 @@ body[data-active-view="advanced"] .view-advanced {
 
   .detail-section-header {
     flex-direction: column;
+  }
+
+  .detail-chart-canvas-wrap {
+    height: 280px;
+  }
+
+  .detail-worst-metrics {
+    grid-template-columns: 1fr;
   }
 
   .detail-history-table {
