@@ -535,6 +535,9 @@ async function initAdvancedMap() {
 
 window.addEventListener("fiware:view-changed", (event) => {
   if (event?.detail?.view === "advanced") {
+    if (advancedMapState.map) {
+      advancedMapState.map.setView([40.4168, -3.7038], 6);
+    }
     resizeAdvancedMap();
   }
 });
