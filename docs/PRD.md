@@ -1,7 +1,7 @@
 # PRD: Product Requirements Document
 ## Aplicación FIWARE de Monitorización de Calidad del Aire y Ruido Urbano
 
-### Versión: 1.0 | Fecha: 27-04-2026
+### Versión: 1.1 | Fecha: 11-05-2026
 
 ---
 
@@ -32,6 +32,17 @@ Además de las vistas anteriores, la aplicación incorpora una nueva **vista ind
 - Render: el módulo frontend `sensor_detail.js` expone `window.renderSensorDetail()` para poblar la vista con los datos del `selectedSensor`.
 
 Este cambio mantiene el enfoque modular del frontend (vistas separadas) y evita introducir dependencias en el backend: la recuperación adicional de históricos seguirá siendo opcional vía `QuantumLeap` o llamadas a `GET /api/v1/air-quality/{sensor_id}` si se requiere.
+
+La vista `Detalle de sensor` se ha ampliado con capacidades analíticas y de salud pública:
+
+- KPIs dinámicos por tipo de sensor (`AirQualityObserved` y `NoiseLevelObserved`) con fallback `N/D`.
+- Simulación de histórico semanal local (`Lunes` a `Domingo`) para continuidad visual cuando no hay histórico remoto.
+- Gráfica semanal con `Chart.js` (multiserie, hover interactivo, animaciones y diseño responsive).
+- Tarjeta de `Día más perjudicial` con nivel de riesgo destacado.
+- Sistema de alertas OMS visual (`safe`, `warning`, `danger`) para `PM2.5`, `PM10`, `NO2`, `O3` y `LAeq`.
+- Recomendaciones de salud dinámicas y personalizadas por contexto:
+        - Calidad del aire: mascarilla, ventilación, purificador, ejercicio exterior condicionado.
+        - Ruido: reducción de exposición, protección auditiva, control de ventanas y descanso acústico.
 
 ### Casos de Uso Primarios
 1. **Ciudadano**: Consultar calidad del aire y ruido en su zona (app web responsiva)
@@ -73,6 +84,19 @@ Sensor IoT → IoT Agent (HTTP) → Orion-LD Context Broker → QuantumLeap → 
 ---
 
 ## 3. FUNCIONALIDADES CLAVE
+
+### 3.0 Vista de Detalle de Sensor
+
+Requisitos funcionales de la vista `detail`:
+
+- Mostrar identidad del sensor (nombre, ciudad, tipo).
+- Renderizar KPIs específicos:
+        - Aire: `PM2.5`, `PM10`, `NO2`, `O3`, `ICA`.
+        - Ruido: `LAeq`, `LAmax`, `LA90`, estado acústico.
+- Mostrar resumen semanal (`promedio`, `máximo`, `mínimo`, `tendencia`) y tabla de evolución.
+- Dibujar gráfica semanal según el tipo de sensor seleccionado en el mapa (sin selector manual adicional).
+- Evaluar cumplimiento OMS por métrica y exponer estado visual en tarjeta KPI y banner general.
+- Generar recomendaciones de salud coherentes con el tipo de contaminación activa.
 
 ### 3.1 Panel Inicial (Dashboard Principal)
 
