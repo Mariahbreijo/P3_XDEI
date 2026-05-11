@@ -200,8 +200,26 @@ function renderSensorPopup(sensor) {
       <p><strong>Coordenadas:</strong> ${sensor.coordinates.lat.toFixed(5)}, ${sensor.coordinates.lon.toFixed(5)}</p>
       ${airStatus ? `<p><strong>Color aire:</strong> ${escapeHtml(airStatus.label)}</p>` : ""}
       ${noiseStatus ? `<p><strong>Color ruido:</strong> ${escapeHtml(noiseStatus.label)}</p>` : ""}
+      <button type="button" class="sensor-detail-button" data-action="open-sensor-detail">Vista en detalle</button>
     </div>
   `;
+}
+
+function attachSensorPopupActions(popupElement, sensor) {
+  const detailButton = popupElement?.querySelector('[data-action="open-sensor-detail"]');
+  if (!detailButton) return;
+
+  detailButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (typeof window.setSelectedCity === "function") {
+      window.setSelectedCity(sensor.city);
+    }
+    if (typeof window.openSensorDetail === "function") {
+      window.openSensorDetail(sensor);
+    }
+  });
 }
 
 function createMarkerIcon(sensor, selectedCity) {
@@ -250,8 +268,11 @@ function buildAirLayer(sensor, selectedCity) {
     if (typeof window.setSelectedCity === "function") {
       window.setSelectedCity(sensor.city);
     }
-    if (typeof window.openSensorDetail === "function") {
-      window.openSensorDetail(sensor);
+  });
+  marker.on("popupopen", (event) => {
+    const popupElement = event.popup?.getElement?.();
+    if (popupElement) {
+      attachSensorPopupActions(popupElement, sensor);
     }
   });
   marker.on("mouseover", () => marker.openTooltip());
@@ -278,8 +299,11 @@ function buildNoiseLayer(sensor, selectedCity) {
     if (typeof window.setSelectedCity === "function") {
       window.setSelectedCity(sensor.city);
     }
-    if (typeof window.openSensorDetail === "function") {
-      window.openSensorDetail(sensor);
+  });
+  marker.on("popupopen", (event) => {
+    const popupElement = event.popup?.getElement?.();
+    if (popupElement) {
+      attachSensorPopupActions(popupElement, sensor);
     }
   });
   marker.on("mouseover", () => marker.openTooltip());
@@ -356,6 +380,17 @@ function updateStatus(message) {
   if (status) status.textContent = message;
 }
 
+function focusMapOnCity(cityName) {
+  if (!advancedMapState.map || !cityName || cityName === "all") return false;
+
+  const citySensors = advancedMapState.allSensors.filter((sensor) => sensor.city === cityName);
+  if (!citySensors.length) return false;
+
+  const bounds = L.latLngBounds(citySensors.map((sensor) => [sensor.coordinates.lat, sensor.coordinates.lon]));
+  advancedMapState.map.fitBounds(bounds.pad(0.22), { animate: true, maxZoom: 13 });
+  return true;
+}
+
 function updateClusterLayers() {
   if (!advancedMapState.map) return;
 
@@ -419,8 +454,13 @@ function readFiltersFromUI() {
 }
 
 function applyUIFilters() {
+  const previousCity = advancedMapState.filters.city;
   readFiltersFromUI();
   updateClusterLayers();
+
+  if (advancedMapState.filters.city !== "all" && advancedMapState.filters.city !== previousCity) {
+    focusMapOnCity(advancedMapState.filters.city);
+  }
 }
 
 async function fetchEntitiesFromOrion() {
@@ -468,6 +508,10 @@ function handleSelectedCityChange(event) {
   advancedMapState.selectedCity = event?.detail?.city || window.appState?.selectedCity || null;
   syncSelectionLabel();
   updateClusterLayers();
+
+  if (advancedMapState.selectedCity) {
+    focusMapOnCity(advancedMapState.selectedCity);
+  }
 }
 
 function bindAdvancedControls() {
@@ -511,6 +555,9 @@ async function initAdvancedMap() {
 
 window.addEventListener("fiware:view-changed", (event) => {
   if (event?.detail?.view === "advanced") {
+    if (advancedMapState.map) {
+      advancedMapState.map.setView([40.4168, -3.7038], 6);
+    }
     resizeAdvancedMap();
   }
 });
