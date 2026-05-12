@@ -4,10 +4,12 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 import httpx
+from pydantic import BaseModel
 
 from app.config import get_settings
 
 from app.services.ica_calculator import calculate_ica, classify_ica, classify_noise_level
+from app.services.llm_recommendations import generate_llm_communication
 from app.services.quantumleap_service import quantumleap_service
 from app.services.orion_service import orion_service
 from app.services.store import AIR_HISTORY, NOISE_HISTORY, get_sensor, list_air_sensors, list_noise_sensors
@@ -16,9 +18,33 @@ settings = get_settings()
 router = APIRouter()
 
 
+class RecommendationRequest(BaseModel):
+    mode: str
+    level: str | None = None
+    city: str | None = None
+    sensor_name: str | None = None
+    metric_label: str | None = None
+    alert_value: float | None = None
+    metrics: dict[str, float | None] = {}
+
+
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@router.post("/recommendations")
+def recommendations(payload: RecommendationRequest) -> dict[str, Any]:
+    result = generate_llm_communication(payload.model_dump())
+    if result:
+        return result
+
+    return {
+        "used_llm": False,
+        "alert_message": None,
+        "summary": None,
+        "recommendations": [],
+    }
 
 
 @router.get("/sensors")

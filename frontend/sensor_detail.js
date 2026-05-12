@@ -6,6 +6,8 @@ const detailState = {
   history: [],
 };
 
+const BACKEND_URL = window.BACKEND_URL || "http://localhost:8000";
+
 const i18n = () => window.appI18n;
 
 function t(key, params = {}) {
@@ -776,20 +778,24 @@ function computeOverallWhoAlert(sensor, current) {
   return evaluated.length ? evaluated[0] : { key: null, value: null, level: "unknown" };
 }
 
-function renderOmsBanner(sensor, current) {
+function renderOmsBanner(sensor, current, overrideMessage = null) {
   const container = $("#detail-oms-banner");
   if (!container) return;
   const overall = computeOverallWhoAlert(sensor, current);
   const cls = overall.level === "danger" ? "oms-danger" : overall.level === "warning" ? "oms-warning" : overall.level === "safe" ? "oms-safe" : "oms-unknown";
   const metricLabel = overall.key ? (overall.key === "pm25" ? "PM2.5" : overall.key === "pm10" ? "PM10" : overall.key === "no2" ? "NO2" : overall.key === "o3" ? "O3" : overall.key === "laeq" ? "LAeq" : overall.key) : t("detail.metric");
 
-  let message = t("status.noDataShort");
-  if (overall.level === "safe") {
-    message = t("status.metricSafe", { metric: metricLabel });
-  } else if (overall.level === "warning") {
-    message = t("status.metricWarning", { metric: metricLabel });
-  } else if (overall.level === "danger") {
-    message = t("status.metricDanger", { metric: metricLabel });
+  let message = overrideMessage?.trim() || "";
+  if (!message) {
+    if (overall.level === "safe") {
+      message = t("status.metricSafe", { metric: metricLabel });
+    } else if (overall.level === "warning") {
+      message = t("status.metricWarning", { metric: metricLabel });
+    } else if (overall.level === "danger") {
+      message = t("status.metricDanger", { metric: metricLabel });
+    } else {
+      message = t("status.noDataShort");
+    }
   }
 
   container.innerHTML = `
@@ -859,22 +865,48 @@ function determineRecommendations(overall, mode) {
   ];
 }
 
-function renderHealthRecommendations(sensor, current) {
-  const container = $("#detail-health-recommendations");
+function buildRecommendationPayload(sensor, current, overall) {
+  const mode = sensorMode(sensor) || "air";
+
+  return {
+    mode,
+    level: overall?.level || "unknown",
+    city: sensor?.city || null,
+    sensor_name: sensorDisplayName(sensor),
+    metric_label: overall?.key || null,
+    alert_value: Number.isFinite(overall?.value) ? Number(overall.value) : null,
+    metrics: mode === "noise"
+      ? {
+          laeq: current?.laeq ?? null,
+          lamax: current?.lamax ?? null,
+          la90: current?.la90 ?? null,
+        }
+      : {
+          pm25: current?.pm25 ?? null,
+          pm10: current?.pm10 ?? null,
+          no2: current?.no2 ?? null,
+          o3: current?.o3 ?? null,
+        },
+  };
+}
+
+function renderRecommendationBlock(container, summary, recommendations, usedLlm = false) {
   if (!container) return;
-  const overall = computeOverallWhoAlert(sensor, current);
-  const recs = determineRecommendations(overall, sensorMode(sensor));
 
   container.innerHTML = `
     <section class="health-recs">
       <div class="health-recs-panel">
-        <h4>${t("detail.recommendations")}</h4>
+        <div class="health-recs-header">
+          <h4>${t("detail.recommendations")}</h4>
+          ${usedLlm ? `<span class="llm-badge" title="Generado por IA (Gemini)">✨ IA</span>` : ""}
+        </div>
+        ${summary ? `<p class="health-recs-summary">${escapeHtml(summary)}</p>` : ""}
         <div class="health-recs-list">
-          ${recs
-            .map((r) => `
+          ${recommendations
+            .map((recommendation) => `
               <div class="health-rec-item">
-                <div class="health-rec-icon">${escapeHtml(r.icon)}</div>
-                <div class="health-rec-text">${escapeHtml(r.text)}</div>
+                <div class="health-rec-icon">${escapeHtml(recommendation.icon)}</div>
+                <div class="health-rec-text">${escapeHtml(recommendation.text)}</div>
               </div>
             `)
             .join("")}
@@ -882,6 +914,49 @@ function renderHealthRecommendations(sensor, current) {
       </div>
     </section>
   `;
+}
+
+async function updateLLMCommunication(sensor, current, overall, fallbackRecommendations) {
+  const payload = buildRecommendationPayload(sensor, current, overall);
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/v1/recommendations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) return;
+
+    const result = await response.json();
+    if (!result?.used_llm) return;
+
+    const recsFromLlm = Array.isArray(result.recommendations) ? result.recommendations.filter(Boolean) : [];
+    const mergedRecommendations = (recsFromLlm.length ? recsFromLlm : fallbackRecommendations.map((item) => item.text)).map((text, index) => ({
+      icon: fallbackRecommendations[index]?.icon || "💡",
+      text: String(text),
+    }));
+
+    const summary = typeof result.summary === "string" && result.summary.trim() ? result.summary.trim() : null;
+    renderRecommendationBlock($("#detail-health-recommendations"), summary, mergedRecommendations.length ? mergedRecommendations : fallbackRecommendations, true);
+    if (typeof result.alert_message === "string" && result.alert_message.trim()) {
+      renderOmsBanner(sensor, current, result.alert_message.trim());
+    }
+  } catch (error) {
+    console.warn("[LLM] Error fetching AI recommendations:", error);
+  }
+}
+
+async function renderHealthRecommendations(sensor, current) {
+  const container = $("#detail-health-recommendations");
+  if (!container) return;
+  const overall = computeOverallWhoAlert(sensor, current);
+  const fallbackRecommendations = determineRecommendations(overall, sensorMode(sensor));
+
+  renderRecommendationBlock(container, null, fallbackRecommendations);
+  void updateLLMCommunication(sensor, current, overall, fallbackRecommendations);
 }
 
 function bindBackButton() {
