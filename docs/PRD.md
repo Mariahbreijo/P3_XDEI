@@ -1,7 +1,7 @@
 # PRD: Product Requirements Document
 ## Aplicación FIWARE de Monitorización de Calidad del Aire y Ruido Urbano
 
-### Versión: 1.2 | Fecha: 11-05-2026
+### Versión: 1.3 | Fecha: 12-05-2026
 
 ---
 
@@ -14,8 +14,8 @@ Desarrollar una **plataforma IoT inteligente y escalable** que integre datos en 
 Crear un **Dashboard geoespacial avanzado** que:
 - Visualice métricas ambientales en tiempo real mediante mapas interactivos (Leaflet/OSM)
 - Calcule automáticamente índices de calidad del aire (ICA) y niveles de ruido
-- Proporcione análisis históricos y predicciones de contaminación
-- Integre un asistente IA que interprete métricas en lenguaje natural
+- Proporcione análisis históricos y tendencias de contaminación
+- Integre un asistente IA que interprete métricas en lenguaje natural y genere alertas/recomendaciones adaptadas a aire o ruido
 
 Adicionalmente, la entrega incluye una **vista avanzada independiente** (Mapa Geoespacial Avanzado) con:
 - Mapa Leaflet a pantalla completa usando OpenStreetMap tiles
@@ -33,7 +33,7 @@ Además de las vistas anteriores, la aplicación incorpora una nueva **vista ind
 
 Este cambio mantiene el enfoque modular del frontend (vistas separadas) y evita introducir dependencias en el backend: la recuperación adicional de históricos seguirá siendo opcional vía `QuantumLeap` o llamadas a `GET /api/v1/air-quality/{sensor_id}` si se requiere.
 
-La vista `Detalle de sensor` se ha ampliado con capacidades analíticas y de salud pública:
+La vista `Detalle de sensor` se ha ampliado con capacidades analíticas, de salud pública e IA:
 
 - KPIs dinámicos por tipo de sensor (`AirQualityObserved` y `NoiseLevelObserved`) con fallback `N/D`.
 - Simulación de histórico semanal local con etiquetas de día localizadas en español o inglés según el idioma activo.
@@ -43,6 +43,8 @@ La vista `Detalle de sensor` se ha ampliado con capacidades analíticas y de sal
 - Recomendaciones de salud dinámicas y personalizadas por contexto:
         - Calidad del aire: mascarilla, ventilación, purificador, ejercicio exterior condicionado.
         - Ruido: reducción de exposición, protección auditiva, control de ventanas y descanso acústico.
+- Comunicación con backend para generar recomendaciones con Gemini cuando hay clave configurada, con fallback local cuando no está disponible.
+- Indicador visual de contenido generado por IA (`✨ IA`) para distinguir respuestas asistidas por modelo.
 
 ### Soporte multidioma
 
@@ -93,8 +95,8 @@ Sensor IoT → IoT Agent (HTTP) → Orion-LD Context Broker → QuantumLeap → 
 | **Persistencia** | QuantumLeap | CrateDB/InfluxDB | Series temporales históricas |
 | **Backend** | API REST | FastAPI + Python | Procesamiento y lógica de negocio |
 | **ML/Analytics** | Data Science | Pandas, GeoPandas, Scikit-learn, TensorFlow | Predicción y análisis |
-| **IA** | Agent LLM | OpenAI/LLaMA | Interpretación de métricas |
-| **Frontend** | Dashboard | Vanilla JS (ES modules), HTML/CSS | Interfaz web responsiva (implementación actual)
+| **IA** | Agent LLM | Gemini / OpenAI-compatible | Interpretación de métricas y generación de alertas |
+| **Frontend** | Dashboard | Vanilla JS (ES modules), HTML/CSS | Interfaz web responsiva (implementación actual) |
 | **Visualización** | Mapas | Leaflet + OpenStreetMap | Geolocalización de sensores |
 | **Gráficos** | Analytics | ChartJS | Series temporales y análisis |
 | **3D** | Experimental | ThreeJS | Visualización inmersiva (futuro) |
@@ -116,10 +118,18 @@ Requisitos funcionales de la vista `detail`:
 - Dibujar gráfica semanal según el tipo de sensor seleccionado en el mapa (sin selector manual adicional).
 - Evaluar cumplimiento OMS por métrica y exponer estado visual en tarjeta KPI y banner general.
 - Generar recomendaciones de salud coherentes con el tipo de contaminación activa.
+- Marcar claramente en UI cuándo las recomendaciones proceden del modelo de IA.
 
-### 3.1 Panel Inicial (Dashboard Principal)
+### 3.1 Asistente IA y recomendaciones
 
-#### 3.1.1 Widget de Índice de Calidad del Aire (ICA)
+- Endpoint backend: `POST /api/v1/recommendations`.
+- Proveedor actual: Gemini vía `generativelanguage.googleapis.com`.
+- Variables de configuración: `LLM_ENABLED`, `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, `LLM_TEMPERATURE`.
+- Si el modelo no está disponible o la respuesta no puede parsearse, el frontend mantiene el fallback local para no bloquear la experiencia.
+
+### 3.2 Panel Inicial (Dashboard Principal)
+
+#### 3.2.1 Widget de Índice de Calidad del Aire (ICA)
 ```
 ┌─────────────────────────────────┐
 │  CALIDAD DEL AIRE GENERAL       │

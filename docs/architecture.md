@@ -1,108 +1,83 @@
 # Arquitectura - Vista Técnica
 
-Este documento ofrece una vista arquitectónica consolidada en un único lugar, alineada con el código actual del repositorio.
+Este documento resume la arquitectura real de la implementación actual y evita dependencias obsoletas que ya no forman parte del flujo activo.
 
 ## Resumen
 
-La implementación actual opera como una demo FIWARE con estos componentes:
+La aplicación opera como una demo FIWARE con estos componentes:
 
-- Sensores (mock/local) → IoT Agent (opcional) → Orion-LD (http://localhost:1026)
-- QuantumLeap (http://localhost:8668) para series temporales (opcional)
-- Backend FastAPI (http://localhost:8000) que agrega, calcula ICA y actúa como proxy a Orion
-- Frontend estático (http://localhost:3000) compuesto por módulos ES (vanilla JS) que consumen `/api/v1/dashboard` y usan el proxy a Orion cuando se requiere.
-  - Incluye una **vista avanzada** (Mapa Geoespacial Avanzado) implementada con Leaflet + OpenStreetMap y `Leaflet.markercluster` para clustering dinámico.
-  - La vista avanzada es una vista separada del dashboard principal, optimizada para pantalla completa con controles de filtros, capas (aire/ruido), y popups con datos NGSI-LD en vivo.
+- Sensores mock/locales o agentes IoT opcionales → Orion-LD (`http://localhost:1026`)
+- QuantumLeap (`http://localhost:8668`) para históricos cuando está disponible
+- Backend FastAPI (`http://localhost:8000`) que calcula ICA, genera recomendaciones con Gemini y actúa como proxy a Orion
+- Frontend estático (`http://localhost:3000`) basado en módulos ES de vanilla JS, HTML y CSS
 
-### Frontend: eventos y nueva vista "Detalle de sensor"
+El frontend incluye dos vistas principales además del panel inicial:
 
-- El frontend sigue un patrón orientado a vistas (`main`, `advanced`, `detail`) controlado por `viewState.activeView` y `document.body.dataset.activeView`.
-- Se introdujo una vista adicional `detail` (Detalle de sensor) que se abre desde el Mapa Avanzado cuando el usuario hace click en un marcador.
-- Estado global: `window.appState` contiene ahora `entities`, `selectedCity` y `selectedSensor` (objeto con campos relevantes del sensor). El `selectedSensor` sirve para poblar la vista detalle sin necesidad de nueva consulta inmediata.
-- API cliente/DOM:
-  - `openSensorDetail(sensor)`: helper expuesto en `window` por el controlador principal (`app_fiware_sync.js`). Actualiza `selectedCity` (si aplica), guarda `selectedSensor`, cambia la vista a `detail` y llama a `window.renderSensorDetail()` si está disponible.
-  - `sensor_detail.js`: módulo responsable de renderizar la vista detalle; expone `window.renderSensorDetail` y se suscribe a los eventos `fiware:selected-sensor-changed` y `fiware:view-changed` para actualizar su UI.
-- Eventos personalizados:
-  - `fiware:view-changed` — notifica cambios de vista (`detail`, `advanced`, `main`).
-  - `fiware:selected-sensor-changed` — notifica cambios en la selección de sensor y es usado por `sensor_detail.js` para refrescar la UI.
+- Mapa Geoespacial Avanzado con Leaflet, OpenStreetMap y clustering
+- Vista `detail` para el detalle de sensor, con histórico sintético, banners OMS y recomendaciones dinámicas
 
-### Frontend: soporte multidioma
+## Frontend: eventos y vista de detalle
 
-- El frontend incluye un runtime i18n compartido en cliente con idioma por defecto en español y opción de inglés persistida en `localStorage`.
-- El selector de idioma se muestra junto al toggle de tema en el header y actualiza el texto visible sin recargar la app.
-- Las traducciones cubren el shell estático, el dashboard, el mapa avanzado y la vista detalle, incluyendo estados, tooltips, popups, recomendaciones y etiquetas derivadas.
-- Los componentes con contenido generado en cliente se suscriben a un evento de cambio de idioma para reconstruir su UI con las nuevas etiquetas.
+- El frontend sigue un patrón de vistas (`main`, `advanced`, `detail`) controlado por `viewState.activeView` y `document.body.dataset.activeView`.
+- `openSensorDetail(sensor)` es el helper público que guarda `selectedSensor`, cambia la vista a `detail` y dispara el render del módulo detalle.
+- `sensor_detail.js` es el responsable de pintar la vista detalle y de reaccionar a `fiware:selected-sensor-changed` y `fiware:view-changed`.
+- El estado global `window.appState` contiene `entities`, `selectedCity` y `selectedSensor` para evitar consultas extra innecesarias al abrir la vista detalle.
 
-#### Extensión funcional reciente en `sensor_detail.js`
+### Soporte multidioma
 
-La vista `detail` incorpora ahora una capa de analítica y salud en cliente, manteniendo desacoplado el backend:
+- El runtime i18n está en cliente, con español por defecto e inglés persistido en `localStorage`.
+- Las traducciones cubren shell, dashboard, mapa avanzado, detalle, recomendaciones y etiquetas derivadas.
+- Los componentes generados en cliente se reconstruyen cuando cambia el idioma.
 
-- Generación de histórico semanal sintético a partir de valores actuales del sensor para visualización estable.
-- Las etiquetas del histórico semanal se obtienen del diccionario i18n, por lo que cambian entre español e inglés junto con el resto de la vista.
-- Renderizado de:
-  - KPIs dinámicos por tipo de sensor.
-  - Resumen semanal y tabla histórica.
-  - Gráfico semanal `Chart.js` con multiserie por dominio (`air`/`noise`).
-  - Tarjeta `Día más perjudicial` con score de riesgo.
-- Motor de alertas OMS local:
-  - Umbrales aplicados: `PM2.5`, `PM10`, `NO2`, `O3`, `LAeq`.
-  - Estados visuales: `safe`, `warning`, `danger`.
-  - Exposición en badges KPI y banner de estado general OMS.
-- Recomendaciones de salud dinámicas:
-  - Perfil `air`: recomendaciones respiratorias y de exposición exterior.
-  - Perfil `noise`: recomendaciones de protección auditiva y reducción de exposición sonora.
+### Extensión funcional de `sensor_detail.js`
 
-Este diseño mantiene el mapa y el dashboard sin acoplamientos fuertes: el Mapa solo invoca un helper público y el módulo detalle se encarga de consumir el estado global.
+La vista `detail` añade una capa local de analítica y salud para respuesta inmediata:
 
-Decisión arquitectónica: la lógica OMS y recomendaciones reside en frontend porque usa el estado visual y permite respuesta inmediata sin aumentar latencia ni complejidad en API. Si en futuras iteraciones se requiere auditabilidad regulatoria, esta lógica podrá migrarse o duplicarse en backend para validación server-side.
+- KPIs dinámicos por tipo de sensor.
+- Histórico semanal sintético para visualización estable.
+- Gráfico semanal con `Chart.js`.
+- Tarjeta de día más perjudicial.
+- Motor de alertas OMS local con estados `safe`, `warning` y `danger`.
+- Recomendaciones visuales por contexto `air` o `noise`.
+- Marcado explícito cuando una respuesta procede de IA con la insignia `✨ IA`.
 
-## Componentes e integraciones
+La generación de alertas y recomendaciones ya no se considera lógica puramente frontend: la evaluación visual sigue en cliente, pero el contenido de recomendaciones se solicita al backend para centralizar el prompt y usar Gemini.
 
-### Notas de implementación recientes (frontend)
+## Backend e integraciones
 
-- `title` y subtítulo: el sitio muestra ahora "Centro de Monitorización Ambiental" con tipografía `Rubik` en el encabezado para una apariencia más moderna.
-- `topnav` actualizado: botones más prominentes; se eliminó el botón "Detalle sensor" del topbar para simplificar la navegación (la vista `detail` sigue disponible desde el mapa).
-- Tema e idioma: el toggle de tema incluye emoji, el selector de idioma aparece a su lado y ambos persisten la preferencia del usuario.
-- Zona en tooltips: el frontend extrae la zona/barrio del `id` de la entidad NGSI-LD y la muestra en tooltips y popups (ej. `Madrid-Centro-01`).
-- Map centering: el mapa avanzado se inicia con `setView([43.0, -3.7], 5)` para centrar en España conservando contexto europeo.
-- UI scale: se ajustó `html { font-size: 15px; }` y paddings para que la interfaz se vea bien al 100% de zoom en navegadores comunes.
+El backend FastAPI expone estos endpoints en `/api/v1`:
 
+- `/health`
+- `/sensors`
+- `/bootstrap`
+- `/air-quality` y `/air-quality/{sensor_id}`
+- `/noise-level` y `/noise-level/{sensor_id}`
+- `/recommendations`
+- `/dashboard`
+- `/orion-proxy/ngsi-ld/v1/entities` y `/orion-proxy/ngsi-ld/v1/entities/{entity_id}`
 
-- Backend (FastAPI): expone endpoints en `/api/v1`:
-  - `/health`
-  - `/sensors`
-  - `/bootstrap` (crea entidades demo en Orion)
-  - `/air-quality` y `/air-quality/{sensor_id}`
-  - `/noise-level` y `/noise-level/{sensor_id}`
-  - `/dashboard`
-  - `/orion-proxy/ngsi-ld/v1/entities` y `/orion-proxy/ngsi-ld/v1/entities/{entity_id}`
+Responsabilidades principales:
 
-- Orion-LD: almacena entidades NGSI-LD. El backend usa `app.services.orion_service` para crear/listar/obtener entidades.
-
-- QuantumLeap: consultado por `app.services.quantumleap_service` para recuperar históricos cuando está disponible.
-
-- Frontend: scripts en `frontend/` consumen `/api/v1/dashboard` y usan el proxy para obtener entidades NGSI-LD si se necesita mostrar el mapa y más detalles.
+- `app.services.orion_service` crea, lista y obtiene entidades NGSI-LD en Orion-LD.
+- `app.services.quantumleap_service` consulta históricos cuando el servicio está disponible.
+- `app.services.llm_recommendations` encapsula Gemini y el fallback compatible con OpenAI, devolviendo un contrato JSON estable con `used_llm`, `alert_message`, `summary` y `recommendations`.
 
 ## Flujos principales
 
-1. Dashboard (primario): Frontend -> `GET /api/v1/dashboard` -> Backend compone resumen por ciudad (usa store local o Orion)
-2. Detalle sensor: Frontend -> `GET /api/v1/air-quality/{sensor_id}` -> Backend busca en Orion o store local -> calcula ICA -> devuelve historial (QuantumLeap si disponible)
-3. Bootstrap: Operador -> `POST /api/v1/bootstrap` -> Backend crea/actualiza entidades demo en Orion via `OrionService.bootstrap_demo_entities()`
-4. Proxy Orion: Frontend -> `GET /api/v1/orion-proxy/...` -> Backend reenvía a Orion con cabeceras `Fiware-Service: air_noise` y `Fiware-ServicePath: /` para evitar CORS.
+1. Dashboard: Frontend -> `GET /api/v1/dashboard` -> Backend compone el resumen por ciudad.
+2. Detalle sensor: Frontend -> `GET /api/v1/air-quality/{sensor_id}` o `GET /api/v1/noise-level/{sensor_id}` -> Backend calcula derivados y, si hay histórico, consulta QuantumLeap.
+3. Bootstrap: Operador -> `POST /api/v1/bootstrap` -> Backend crea o actualiza entidades demo en Orion.
+4. Recomendaciones IA: Frontend -> `POST /api/v1/recommendations` -> Backend llama a Gemini o al fallback y devuelve una respuesta normalizada.
+5. Proxy Orion: Frontend -> `GET /api/v1/orion-proxy/...` -> Backend reenvía a Orion con cabeceras FIWARE.
 
 ## Observabilidad y configuración
 
-- `backend/app/config.py` contiene URLs y valores por defecto:
-  - `orion_url`: http://localhost:1026
-  - `quantumleap_url`: http://localhost:8668
-  - `fiware_service`: air_noise
-  - `fiware_servicepath`: /
-
-- Timeout y manejo de caídas: los servicios `OrionService` y `QuantumLeapService` exponen `is_available()` y el backend usa datos locales como fallback.
+- `backend/app/config.py` carga `.env`, limpia espacios y finales de línea, y detecta `gemini` cuando la configuración lo indica.
+- `main.py` registra al inicio el estado de LLM para facilitar el diagnóstico.
+- `OrionService` y `QuantumLeapService` exponen `is_available()` y el sistema usa fallback local cuando un servicio no responde.
 
 ## Recomendaciones prácticas
 
-- Para demos locales, ejecutar `fiware/docker-compose.yml` y luego `uvicorn app.main:app --reload --port 8000` y servir `frontend` en 3000.
-- Configurar variables en `.env` si se desea apuntar a entornos remotos.
-- Añadir autenticación/ACL en el proxy antes de exponerlo en producción.
-
-***
+- Para demos locales, ejecutar `fiware/docker-compose.yml`, luego `uvicorn app.main:app --reload --port 8000` y servir `frontend` en el puerto 3000.
+- Definir `LLM_ENABLED=true`, `LLM_PROVIDER=gemini`, `LLM_API_KEY` y `LLM_MODEL=gemini-2.5-flash` en `backend/.env`.
+- Añadir autenticación y ACL al proxy si el sistema se expone fuera de entorno local.
