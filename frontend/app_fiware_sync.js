@@ -608,6 +608,9 @@ function renderSelectedCity(model) {
   const air = city.air;
   const noise = city.noise;
 
+  const formatAirValue = (value) => (value != null ? `${formatNumber(value)} µg/m³` : "--");
+  const formatNoiseValue = (value) => (value != null ? `${formatNumber(value)} dB` : "--");
+
   container.innerHTML = `
     <article class="selected-summary">
       <div>
@@ -635,18 +638,18 @@ function renderSelectedCity(model) {
         <div>
           <p class="metric-title">${t("labels.airQuality")}</p>
           <ul>
-            <li><span>PM10</span><strong>${formatNumber(air?.PM10)}</strong></li>
-            <li><span>PM2_5</span><strong>${formatNumber(air?.PM2_5)}</strong></li>
-            <li><span>NO2</span><strong>${formatNumber(air?.NO2)}</strong></li>
-            <li><span>O3</span><strong>${formatNumber(air?.O3)}</strong></li>
+            <li><span>PM10</span><strong>${formatAirValue(air?.PM10)}</strong></li>
+            <li><span>PM2_5</span><strong>${formatAirValue(air?.PM2_5)}</strong></li>
+            <li><span>NO2</span><strong>${formatAirValue(air?.NO2)}</strong></li>
+            <li><span>O3</span><strong>${formatAirValue(air?.O3)}</strong></li>
           </ul>
         </div>
         <div>
           <p class="metric-title">${t("labels.urbanNoise")}</p>
           <ul>
-            <li><span>LAeq</span><strong>${formatNumber(noise?.LAeq)}</strong></li>
-            <li><span>LAmax</span><strong>${formatNumber(noise?.LAmax)}</strong></li>
-            <li><span>LA90</span><strong>${formatNumber(noise?.LA90)}</strong></li>
+            <li><span>LAeq</span><strong>${formatNoiseValue(noise?.LAeq)}</strong></li>
+            <li><span>LAmax</span><strong>${formatNoiseValue(noise?.LAmax)}</strong></li>
+            <li><span>LA90</span><strong>${formatNoiseValue(noise?.LA90)}</strong></li>
           </ul>
         </div>
       </div>

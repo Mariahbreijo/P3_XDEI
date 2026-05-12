@@ -1,12 +1,29 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.endpoints import router as api_router
 from app.config import get_settings
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 settings = get_settings()
+
+logger.info(f"Backend started: {settings.app_name}")
+logger.info(f"LLM enabled: {settings.llm_enabled}")
+logger.info(f"LLM provider: {settings.llm_provider}")
+logger.info(f"LLM model: {settings.llm_model}")
+if settings.llm_api_key:
+    logger.info(f"LLM API key configured (length: {len(settings.llm_api_key)})")
+else:
+    logger.warning("No LLM API key configured")
 
 app = FastAPI(
     title=settings.app_name,

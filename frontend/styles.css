@@ -689,8 +689,35 @@ body[data-active-view="advanced"] .view-advanced {
   color: #0f172a;
   border: 1px solid rgba(15, 23, 42, 0.06);
 }
+.health-recs-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.health-recs-header h4 {
+  margin: 0;
+  flex: 1;
+}
+.llm-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6366f1;
+  white-space: nowrap;
+  cursor: help;
+}
 .health-recs-panel h4 {
   margin: 0 0 12px 0;
+}
+.health-recs-summary {
+  margin: 0 0 14px;
+  color: rgba(15, 23, 42, 0.78);
+  line-height: 1.55;
 }
 .health-recs-list {
   display: grid;
