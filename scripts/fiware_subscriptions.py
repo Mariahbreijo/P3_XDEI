@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-FIWARE Subscription Creator - Configures Orion-LD subscriptions to QuantumLeap.
+FIWARE Subscription Creator - Configures Orion (v2) subscriptions to QuantumLeap.
 
-This script creates two subscriptions in Orion-LD:
+This script creates two subscriptions in Orion using NGSI v2 API:
   1. For AirQualityObserved entities - notifies QuantumLeap on updates
   2. For NoiseLevelObserved entities - notifies QuantumLeap on updates
 
-The subscriptions use the NGSI-LD context and proper headers for persistence.
+The subscriptions use the NGSI v2 format for persistence.
 
 Usage:
   python3 scripts/fiware_subscriptions.py
   python3 scripts/fiware_subscriptions.py --orion-url http://localhost:1026 --quantumleap-url http://fiware-quantumleap:8668
 
 Environment variables:
-  ORION_URL: Orion-LD base URL (default: http://localhost:1026)
+  ORION_URL: Orion base URL (default: http://localhost:1026)
   QUANTUMLEAP_URL: QuantumLeap internal URL (default: http://fiware-quantumleap:8668)
   FIWARE_SERVICE: Fiware-Service header (default: common)
   FIWARE_SERVICEPATH: Fiware-ServicePath header (default: /)
@@ -35,9 +35,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# NGSI-LD context
-NGSI_LD_CONTEXT = "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
-
 
 def create_subscription(
     orion_url: str,
@@ -46,12 +43,12 @@ def create_subscription(
     fiware_service: str,
     fiware_servicepath: str,
 ) -> bool:
-    """Create a subscription in Orion-LD for a specific entity type.
+    """Create a subscription in Orion (v2) for a specific entity type.
 
     Args:
-        orion_url: Base URL of Orion-LD
+        orion_url: Base URL of Orion
         quantumleap_url: Internal URL of QuantumLeap (for notifications)
-        entity_type: NGSI-LD entity type (AirQualityObserved or NoiseLevelObserved)
+        entity_type: NGSI v2 entity type (AirQualityObserved or NoiseLevelObserved)
         fiware_service: Fiware-Service header value
         fiware_servicepath: Fiware-ServicePath header value
 
@@ -59,28 +56,26 @@ def create_subscription(
         True if subscription was created successfully, False otherwise
     """
     headers = {
-        "Content-Type": "application/ld+json",
-        "Link": f'<{NGSI_LD_CONTEXT}>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
+        "Content-Type": "application/json",
         "Fiware-Service": fiware_service,
         "Fiware-ServicePath": fiware_servicepath,
     }
 
-    # Subscription payload for NGSI-LD
+    # Subscription payload for NGSI v2
     subscription = {
-        "type": "Subscription",
-        "entities": [{"type": entity_type}],
+        "description": f"Subscription for {entity_type} entities to QuantumLeap",
+        "subject": {
+            "entities": [{"type": entity_type}]
+        },
         "notification": {
-            "endpoint": {
-                "uri": f"{quantumleap_url}/v1/notify",
-                "accept": "application/ld+json",
-            },
-            "format": "normalized",
-            "attributes": [],  # Empty = all attributes
+            "http": {
+                "url": f"{quantumleap_url}/v1/notify"
+            }
         },
         "status": "active",
     }
 
-    url = f"{orion_url}/ngsi-ld/v1/subscriptions"
+    url = f"{orion_url}/v2/subscriptions"
 
     try:
         with httpx.Client(timeout=10.0) as client:
@@ -96,8 +91,8 @@ def create_subscription(
                 logger.info(f"✓ Subscription created successfully for {entity_type}")
                 logger.info(f"  ID: {subscription_id}")
                 return True
-            elif response.status_code == 409:
-                logger.warning(f"⚠ Subscription for {entity_type} already exists")
+            elif response.status_code == 422:
+                logger.warning(f"⚠ Subscription for {entity_type} already exists or invalid")
                 return True
             else:
                 logger.error(f"✗ Failed to create subscription for {entity_type}")
@@ -111,10 +106,10 @@ def create_subscription(
 
 
 def list_subscriptions(orion_url: str, fiware_service: str, fiware_servicepath: str) -> bool:
-    """List all subscriptions in Orion-LD.
+    """List all subscriptions in Orion (v2).
 
     Args:
-        orion_url: Base URL of Orion-LD
+        orion_url: Base URL of Orion
         fiware_service: Fiware-Service header value
         fiware_servicepath: Fiware-ServicePath header value
 
@@ -122,12 +117,11 @@ def list_subscriptions(orion_url: str, fiware_service: str, fiware_servicepath: 
         True if listing succeeded, False otherwise
     """
     headers = {
-        "Link": f'<{NGSI_LD_CONTEXT}>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
         "Fiware-Service": fiware_service,
         "Fiware-ServicePath": fiware_servicepath,
     }
 
-    url = f"{orion_url}/ngsi-ld/v1/subscriptions"
+    url = f"{orion_url}/v2/subscriptions"
 
     try:
         with httpx.Client(timeout=10.0) as client:
@@ -142,9 +136,13 @@ def list_subscriptions(orion_url: str, fiware_service: str, fiware_servicepath: 
                 logger.info(f"✓ Found {len(subscriptions)} subscription(s):")
                 for sub in subscriptions:
                     sub_id = sub.get("id", "N/A")
-                    sub_type = sub.get("entities", [{}])[0].get("type", "N/A")
+                    sub_desc = sub.get("description", "N/A")
                     sub_status = sub.get("status", "N/A")
-                    logger.info(f"  - {sub_id} (type: {sub_type}, status: {sub_status})")
+                    entity_types = ", ".join([e.get("type", "?") for e in sub.get("subject", {}).get("entities", [])])
+                    logger.info(f"  - {sub_id}")
+                    logger.info(f"    Description: {sub_desc}")
+                    logger.info(f"    Types: {entity_types}")
+                    logger.info(f"    Status: {sub_status}")
             return True
 
     except httpx.RequestError as e:
@@ -184,9 +182,9 @@ def main() -> int:
     args = parser.parse_args()
 
     logger.info("=" * 70)
-    logger.info("FIWARE Subscription Creator")
+    logger.info("FIWARE Subscription Creator (v2 API)")
     logger.info("=" * 70)
-    logger.info(f"Orion-LD URL: {args.orion_url}")
+    logger.info(f"Orion URL: {args.orion_url}")
     logger.info(f"QuantumLeap URL: {args.quantumleap_url}")
     logger.info(f"Fiware-Service: {args.fiware_service}")
     logger.info(f"Fiware-ServicePath: {args.fiware_servicepath}")

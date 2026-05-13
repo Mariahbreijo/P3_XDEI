@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Historical Data Seeding Script for FIWARE NGSI-LD.
+Historical Data Seeding Script for FIWARE NGSI v2.
 
 This script generates synthetic historical data for the last 7 days with hourly intervals
-and injects it into Orion-LD via upsert operations. The data will then be automatically
+and injects it into Orion via upsert operations. The data will then be automatically
 persisted to QuantumLeap through the subscriptions.
 
 Features:
   - Generates 168 hourly data points (7 days × 24 hours) per sensor
   - Realistic day/night variation curves for pollutants and noise
-  - Proper NGSI-LD format with observedAt timestamps
+  - Proper NGSI v2 format with dateObserved timestamps
   - Batch processing for efficiency
 
 Usage:
@@ -18,7 +18,7 @@ Usage:
   python3 scripts/seed_historical_data.py --num-days 14 --batch-size 10
 
 Environment variables:
-  ORION_URL: Orion-LD base URL (default: http://localhost:1026)
+  ORION_URL: Orion base URL (default: http://localhost:1026)
   FIWARE_SERVICE: Fiware-Service header (default: common)
   FIWARE_SERVICEPATH: Fiware-ServicePath header (default: /)
 """
@@ -41,9 +41,6 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-# NGSI-LD context
-NGSI_LD_CONTEXT = "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"
 
 # Sensor definitions with locations
 SENSORS = [
@@ -221,75 +218,114 @@ def generate_noise_level_reading(hour: int, sensor_id: str) -> dict[str, Any]:
 
 
 def create_entity_update(sensor: dict[str, Any], timestamp: datetime) -> dict[str, Any]:
-    """Create an NGSI-LD entity update for a sensor at a specific time.
+    """Create an NGSI v2 entity update for a sensor at a specific time.
 
     Args:
         sensor: Sensor definition dictionary
         timestamp: Observation datetime
 
     Returns:
-        NGSI-LD entity with historical data
+        NGSI v2 entity with historical data
     """
     hour = timestamp.hour
+    
+    # Timestamp in ISO format
+    timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
+    
     entity: dict[str, Any] = {
         "id": sensor["id"],
         "type": sensor["type"],
-        "@context": NGSI_LD_CONTEXT,
     }
 
-    # Add static properties
+    # Add static properties (without type/value wrapper for v2)
     if "location" in sensor:
-        entity["location"] = {"type": "GeoProperty", "value": sensor["location"]}
+        entity["location"] = {
+            "type": "geo:point",
+            "value": f"{sensor['location']['coordinates'][1]},{sensor['location']['coordinates'][0]}"
+        }
+    
     if "address" in sensor:
-        entity["address"] = {"type": "Property", "value": sensor["address"]}
+        addr = sensor["address"]
+        entity["address"] = {
+            "type": "structuredValue",
+            "value": {
+                "streetAddress": addr.get("streetAddress", ""),
+                "addressLocality": addr.get("addressLocality", ""),
+                "addressCountry": addr.get("addressCountry", "")
+            }
+        }
+    
     if "refDevice" in sensor:
-        entity["refDevice"] = {"type": "Relationship", "object": sensor["refDevice"]}
+        entity["refDevice"] = {
+            "type": "Relationship",
+            "value": sensor["refDevice"]
+        }
 
-    # Add observedAt timestamp - CRITICAL for historical data
-    timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
-    entity["observedAt"] = {"type": "Property", "value": timestamp_str}
-    entity["dateObserved"] = {"type": "Property", "value": timestamp_str}
+    # Add dateObserved timestamp - CRITICAL for historical data in v2
+    entity["dateObserved"] = {
+        "type": "DateTime",
+        "value": timestamp_str
+    }
 
     # Add dynamic readings
     if sensor["type"] == "AirQualityObserved":
         readings = generate_air_quality_reading(hour, sensor["id"])
+        for key, value in readings.items():
+            if key in ["temperature", "relativeHumidity"]:
+                entity[key] = {"type": "Number", "value": value}
+            else:
+                entity[key] = {"type": "Number", "value": value}
     else:  # NoiseLevelObserved
         readings = generate_noise_level_reading(hour, sensor["id"])
-
-    for key, value in readings.items():
-        if key in ["temperature", "relativeHumidity", "windSpeed"]:
-            entity[key] = {"type": "Property", "value": value, "unitCode": "CEL" if key == "temperature" else "P1" if key == "relativeHumidity" else "M_S"}
-        else:
-            entity[key] = {"type": "Property", "value": value}
+        for key, value in readings.items():
+            entity[key] = {"type": "Number", "value": value}
 
     return entity
 
 
 def upsert_entity(client: httpx.Client, orion_url: str, entity: dict[str, Any], headers: dict[str, str]) -> bool:
-    """Upsert a single entity to Orion-LD.
+    """Upsert a single entity to Orion (v2).
+
+    Uses PATCH /v2/entities/{id}/attrs to update attributes.
+    If entity doesn't exist, create it first with POST /v2/entities.
 
     Args:
         client: HTTP client
-        orion_url: Base URL of Orion-LD
-        entity: NGSI-LD entity
+        orion_url: Base URL of Orion
+        entity: NGSI v2 entity
         headers: HTTP headers
 
     Returns:
         True if successful, False otherwise
     """
-    url = f"{orion_url}/ngsi-ld/v1/entityOperations/upsert"
-
+    entity_id = entity.get("id")
+    
+    # Extract attributes (everything except id and type)
+    attrs = {k: v for k, v in entity.items() if k not in ["id", "type"]}
+    
+    # First try to update attributes (PATCH)
+    update_url = f"{orion_url}/v2/entities/{entity_id}/attrs"
+    
     try:
-        response = client.post(url, json=[entity], headers=headers)
-
+        response = client.patch(update_url, json=attrs, headers=headers)
+        
         if response.status_code in [200, 204]:
             return True
+        elif response.status_code == 404:
+            # Entity doesn't exist, create it
+            create_url = f"{orion_url}/v2/entities"
+            response = client.post(create_url, json=entity, headers=headers)
+            if response.status_code in [201, 204]:
+                return True
+            else:
+                logger.debug(f"Failed to create entity {entity_id}: {response.status_code} - {response.text}")
+                return False
         else:
-            logger.error(f"Failed to upsert entity {entity.get('id')}: {response.status_code} - {response.text}")
+            logger.debug(f"Failed to upsert entity {entity_id}: {response.status_code} - {response.text}")
             return False
 
     except httpx.RequestError as e:
-        logger.error(f"Error upserting entity {entity.get('id')}: {e}")
+        logger.debug(f"Error upserting entity {entity_id}: {e}")
         return False
 
 
@@ -301,10 +337,10 @@ def seed_historical_data(
     fiware_servicepath: str,
     dry_run: bool = False,
 ) -> int:
-    """Seed historical data into Orion-LD.
+    """Seed historical data into Orion (v2).
 
     Args:
-        orion_url: Base URL of Orion-LD
+        orion_url: Base URL of Orion
         num_days: Number of days of history to generate
         batch_size: Number of entities to process before logging progress
         fiware_service: Fiware-Service header value
@@ -315,16 +351,15 @@ def seed_historical_data(
         Exit code (0 for success, 1 for failure)
     """
     headers = {
-        "Content-Type": "application/ld+json",
-        "Link": f'<{NGSI_LD_CONTEXT}>; rel="http://www.w3.org/ns/json-ld#context"; type="application/ld+json"',
+        "Content-Type": "application/json",
         "Fiware-Service": fiware_service,
         "Fiware-ServicePath": fiware_servicepath,
     }
 
     logger.info("=" * 70)
-    logger.info("Historical Data Seeding for FIWARE NGSI-LD")
+    logger.info("Historical Data Seeding for FIWARE NGSI v2")
     logger.info("=" * 70)
-    logger.info(f"Orion-LD URL: {orion_url}")
+    logger.info(f"Orion URL: {orion_url}")
     logger.info(f"Number of days: {num_days}")
     logger.info(f"Total sensors: {len(SENSORS)}")
     logger.info(f"Data points per sensor: {num_days * 24}")
