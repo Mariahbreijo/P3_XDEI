@@ -1,5 +1,5 @@
 #!/bin/bash
-# Quickstart para Configuración de Persistencia FIWARE
+# Quickstart para Configuración de Persistencia FIWARE (NGSI v2)
 # Este script ejecuta las suscripciones y la inyección de datos históricos
 
 set -e
@@ -8,19 +8,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "════════════════════════════════════════════════════════"
-echo "FIWARE Persistence Configuration Quickstart"
+echo "FIWARE Persistence Configuration Quickstart (v2 API)"
 echo "════════════════════════════════════════════════════════"
 echo ""
 
-# Verificar que Orion está corriendo
-echo "▶ Verificando conectividad con Orion-LD..."
-if ! curl -s http://localhost:1026/version > /dev/null; then
-    echo "✗ ERROR: Orion-LD no está disponible en http://localhost:1026"
+# Verificar que Orion está corriendo (v2 API)
+echo "▶ Verificando conectividad con Orion (v2 API)..."
+if ! curl -s http://localhost:1026/v2/version > /dev/null; then
+    echo "✗ ERROR: Orion no está disponible en http://localhost:1026"
     echo "  Asegúrate de que los contenedores Docker estén corriendo:"
     echo "  $ docker-compose -f fiware/docker-compose.yml up -d"
     exit 1
 fi
-echo "✓ Orion-LD está disponible"
+echo "✓ Orion (v2 API) está disponible"
 echo ""
 
 # Verificar que QuantumLeap está corriendo
@@ -36,7 +36,7 @@ echo ""
 
 # Paso 1: Crear suscripciones
 echo "════════════════════════════════════════════════════════"
-echo "Paso 1/2: Creando suscripciones Orion-LD → QuantumLeap"
+echo "Paso 1/2: Creando suscripciones Orion (v2) → QuantumLeap"
 echo "════════════════════════════════════════════════════════"
 echo ""
 
@@ -71,8 +71,8 @@ echo "════════════════════════�
 echo ""
 echo "Próximos pasos:"
 echo ""
-echo "1. Verificar suscripciones:"
-echo "   curl -s http://localhost:1026/ngsi-ld/v1/subscriptions | jq ."
+echo "1. Verificar suscripciones (v2 API):"
+echo "   curl -s http://localhost:1026/v2/subscriptions | jq ."
 echo ""
 echo "2. Verificar datos históricos:"
 echo "   curl -s http://localhost:8668/v1/entities/urn:ngsi-ld:AirQualityObserved:Madrid:001 | jq '.value[] | {dateObserved, PM2_5, PM10}' | head"
