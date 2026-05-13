@@ -1,6 +1,5 @@
 .venv/
 backend/.venv/
 backend/.env
-backend/.env.example
 **/__pycache__/
 
