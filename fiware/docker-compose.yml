@@ -6,8 +6,8 @@ services:
     image: mongo:5.0
     container_name: fiware-mongodb
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
     ports:
       - "27017:27017"
     volumes:
@@ -30,9 +30,9 @@ services:
     ports:
       - "1026:1026"
     environment:
-      ORIONLD_MONGO_HOST: mongodb
-      ORIONLD_MONGO_USER: admin
-      ORIONLD_MONGO_PASSWORD: admin123
+      - ORIONLD_MONGO_HOST=mongodb
+      - ORIONLD_MONGO_USER=admin
+      - ORIONLD_MONGO_PASSWORD=admin123
     command: >
       -dbhost mongodb
       -db orionld
@@ -58,25 +58,25 @@ services:
       - "4041:4041"
       - "7896:7896"
     environment:
-      IOTA_CB_HOST: orion-ld
-      IOTA_CB_PORT: 1026
-      IOTA_NORTH_PORT: 4041
-      IOTA_DEFAULT_TRANSPORT: HTTP
-      IOTA_MQTT_DISABLED: true
-      IOTA_AMQP_DISABLED: true
-      IOTA_REGISTRY_TYPE: mongodb
-      IOTA_MONGO_URI: mongodb://admin:admin123@mongodb:27017/iotagent-json?authSource=admin
-      IOTA_MONGO_HOST: mongodb
-      IOTA_MONGO_PORT: 27017
-      IOTA_MONGO_DB: iotagent-json
-      IOTA_MONGO_USER: admin
-      IOTA_MONGO_PASSWORD: admin123
-      IOTA_MONGO_AUTH_SOURCE: admin
-      IOTA_DEFAULT_RESOURCE: /iot/json
-      IOTA_JSON_LD_CONTEXT: https://raw.githubusercontent.com/FIWARE/data-models/master/context.jsonld
-      IOTA_TIMESTAMP: true
-      IOTA_CB_NGSI_VERSION: ld
-      IOTA_LOG_LEVEL: INFO
+      - IOTA_CB_HOST=orion-ld
+      - IOTA_CB_PORT=1026
+      - IOTA_NORTH_PORT=4041
+      - IOTA_DEFAULT_TRANSPORT=HTTP
+      - IOTA_MQTT_DISABLED=true
+      - IOTA_AMQP_DISABLED=true
+      - IOTA_REGISTRY_TYPE=mongodb
+      - IOTA_MONGO_URI=mongodb://admin:admin123@mongodb:27017/iotagent-json?authSource=admin
+      - IOTA_MONGO_HOST=mongodb
+      - IOTA_MONGO_PORT=27017
+      - IOTA_MONGO_DB=iotagent-json
+      - IOTA_MONGO_USER=admin
+      - IOTA_MONGO_PASSWORD=admin123
+      - IOTA_MONGO_AUTH_SOURCE=admin
+      - IOTA_DEFAULT_RESOURCE=/iot/json
+      - IOTA_JSON_LD_CONTEXT=https://raw.githubusercontent.com/FIWARE/data-models/master/context.jsonld
+      - IOTA_TIMESTAMP=true
+      - IOTA_CB_NGSI_VERSION=ld
+      - IOTA_LOG_LEVEL=INFO
     networks:
       - fiware-network
     healthcheck:
@@ -92,11 +92,12 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: quantumleap
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=quantumleap
     volumes:
       - timescaledb-data:/var/lib/postgresql/data
+      - ./init_timescaledb:/docker-entrypoint-initdb.d:ro
     networks:
       - fiware-network
     healthcheck:
@@ -117,17 +118,19 @@ services:
     ports:
       - "8668:8668"
     environment:
-      LOGLEVEL: INFO
-      POSTGRES_HOST: timescaledb
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: quantumleap
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_CONNECT_TIMEOUT: 10
+      - QL_DEFAULT_DB=timescale
+      - DATABASE_TYPE=postgres
+      - POSTGRES_HOST=timescaledb
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB_NAME=quantumleap
+      - POSTGRES_DB_USER=postgres
+      - POSTGRES_DB_PASS=postgres
+    volumes:
+      - ./patches/quantumleap/health.py:/src/ngsi-timeseries-api/src/reporter/health.py:ro
     networks:
       - fiware-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8668/version"]
+      test: ["CMD", "curl", "-f", "http://localhost:8668/health"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -141,5 +144,3 @@ volumes:
 networks:
   fiware-network:
     driver: bridge
-
-

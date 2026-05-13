@@ -15,7 +15,7 @@ class Settings(BaseModel):
     app_env: str = "dev"
     orion_url: str = "http://localhost:1026"
     quantumleap_url: str = "http://localhost:8668"
-    fiware_service: str = "air_noise"
+    fiware_service: str = "common"
     fiware_servicepath: str = "/"
     llm_enabled: bool = False
     llm_provider: str = "openai"

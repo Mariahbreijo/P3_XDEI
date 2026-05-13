@@ -3,7 +3,7 @@ const ORION_FALLBACK_URL = "http://localhost:8000/api/v1/orion-proxy/ngsi-ld/v1/
 
 const ORION_HEADERS = {
   Accept: "application/ld+json",
-  "Fiware-Service": "air_noise",
+  "Fiware-Service": "common",
   "Fiware-ServicePath": "/",
 };
 
@@ -151,6 +151,16 @@ function extractZone(entity) {
 
 function extractCoordinates(entity) {
   const rawLocation = readNgsiValue(findAttribute(entity, ["location"]));
+
+  if (typeof rawLocation === "string") {
+    const parts = rawLocation.split(",").map((part) => part.trim());
+    if (parts.length >= 2) {
+      const lat = toNumber(parts[0]);
+      const lon = toNumber(parts[1]);
+      if (lon != null && lat != null) return { lat, lon };
+    }
+  }
+
   const coordinates = rawLocation?.coordinates ?? rawLocation?.value?.coordinates ?? null;
 
   if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
@@ -519,23 +529,15 @@ function applyUIFilters() {
 }
 
 async function fetchEntitiesFromOrion() {
-  const requests = [
-    { url: ORION_DIRECT_URL, options: { headers: ORION_HEADERS } },
-    { url: ORION_FALLBACK_URL, options: { headers: ORION_HEADERS } },
-  ];
-
-  for (const request of requests) {
-    try {
-      const response = await fetch(request.url, request.options);
-      if (!response.ok) continue;
-      const entities = await response.json();
-      if (Array.isArray(entities)) return entities;
-    } catch (error) {
-      console.warn(`Orion fetch failed for ${request.url}:`, error.message);
-    }
+  try {
+    const response = await fetch(ORION_FALLBACK_URL, { headers: ORION_HEADERS });
+    if (!response.ok) return [];
+    const entities = await response.json();
+    return Array.isArray(entities) ? entities : [];
+  } catch (error) {
+    console.warn(`Orion fetch failed for ${ORION_FALLBACK_URL}:`, error.message);
+    return [];
   }
-
-  return [];
 }
 
 async function refreshAdvancedMap() {

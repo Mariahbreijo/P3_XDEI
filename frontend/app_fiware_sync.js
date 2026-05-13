@@ -143,6 +143,16 @@ function extractCity(entity) {
 
 function extractCoordinates(entity) {
   const rawLocation = readNgsiValue(findAttribute(entity, ["location"]));
+
+  if (typeof rawLocation === "string") {
+    const parts = rawLocation.split(",").map((part) => part.trim());
+    if (parts.length >= 2) {
+      const lat = toNumber(parts[0]);
+      const lon = toNumber(parts[1]);
+      if (lon != null && lat != null) return [lon, lat];
+    }
+  }
+
   const coordinates = rawLocation?.coordinates ?? rawLocation?.value?.coordinates ?? null;
 
   if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
@@ -344,35 +354,22 @@ function buildGlobalSummary(cities) {
 }
 
 async function fetchEntitiesFromOrion() {
-  const requests = [
-    {
-      url: ORION_PROXY_URL,
-      options: { headers: { Accept: "application/ld+json" } },
-    },
-    {
-      url: ORION_DIRECT_URL,
-      options: {
-        headers: {
-          Accept: "application/ld+json",
-          "Fiware-Service": "air_noise",
-          "Fiware-ServicePath": "/",
-        },
+  try {
+    const response = await fetch(ORION_PROXY_URL, {
+      headers: {
+        Accept: "application/ld+json",
+        "Fiware-Service": "common",
+        "Fiware-ServicePath": "/",
       },
-    },
-  ];
+    });
 
-  for (const request of requests) {
-    try {
-      const response = await fetch(request.url, request.options);
-      if (!response.ok) continue;
-      const entities = await response.json();
-      if (Array.isArray(entities)) return entities;
-    } catch (error) {
-      console.warn(`Orion fetch failed for ${request.url}:`, error.message);
-    }
+    if (!response.ok) return [];
+    const entities = await response.json();
+    return Array.isArray(entities) ? entities : [];
+  } catch (error) {
+    console.warn(`Orion fetch failed for ${ORION_PROXY_URL}:`, error.message);
+    return [];
   }
-
-  return [];
 }
 
 function resolveDefaultCity(cities) {

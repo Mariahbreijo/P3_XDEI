@@ -6,7 +6,7 @@ it reflects the new value.
 
 Usage:
   python3 scripts/manual_iot_agent_smoke_test.py
-  python3 scripts/manual_iot_agent_smoke_test.py --service air_noise
+    python3 scripts/manual_iot_agent_smoke_test.py --service common
 """
 from __future__ import annotations
 
@@ -159,7 +159,7 @@ def poll_orion(client: httpx.Client, service: str, service_path: str) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Manual FIWARE smoke test")
-    parser.add_argument("--service", default="openiot", help="Fiware-Service header value (default: openiot)")
+    parser.add_argument("--service", default="common", help="Fiware-Service header value (default: common)")
     parser.add_argument("--service-path", default="/", help="Fiware-ServicePath header value (default: /)")
     args = parser.parse_args()
 

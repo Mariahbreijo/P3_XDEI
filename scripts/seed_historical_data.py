@@ -30,6 +30,7 @@ import logging
 import math
 import os
 import sys
+import time
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -329,13 +330,88 @@ def upsert_entity(client: httpx.Client, orion_url: str, entity: dict[str, Any], 
         return False
 
 
+def validate_quantumleap_persistence(
+    quantumleap_url: str,
+    fiware_service: str,
+    fiware_servicepath: str,
+    timeout_seconds: float = 15.0,
+) -> bool:
+    """Validate that QuantumLeap can create entity tables/rows via /v2/notify.
+
+    Sends a minimal test notification directly to QuantumLeap and verifies the
+    entity becomes queryable through QuantumLeap API. If this check fails,
+    bulk historical seeding should not start.
+    """
+    test_entity_id = "urn:ngsi-ld:AirQualityObserved:Validation:001"
+    test_timestamp = datetime.utcnow().replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    notify_payload = {
+        "subscriptionId": "ql-preflight-validation",
+        "data": [
+            {
+                "id": test_entity_id,
+                "type": "AirQualityObserved",
+                "dateObserved": {"type": "DateTime", "value": test_timestamp},
+                "PM2_5": {"type": "Number", "value": 21.3},
+                "address": {
+                    "type": "structuredValue",
+                    "value": {
+                        "streetAddress": "Validation Street 1",
+                        "addressLocality": "Validation",
+                        "addressCountry": "ES",
+                    },
+                },
+            }
+        ],
+    }
+
+    ql_headers = {
+        "Content-Type": "application/json",
+        "Fiware-Service": fiware_service,
+        "Fiware-ServicePath": fiware_servicepath,
+    }
+
+    notify_url = f"{quantumleap_url}/v2/notify"
+    entity_url = f"{quantumleap_url}/v2/entities/{test_entity_id}"
+
+    logger.info("Running QuantumLeap preflight validation via /v2/notify...")
+
+    try:
+        with httpx.Client(timeout=timeout_seconds) as client:
+            notify_resp = client.post(notify_url, json=notify_payload, headers=ql_headers)
+            if notify_resp.status_code not in [200, 201, 202, 204]:
+                logger.error(
+                    "QuantumLeap preflight notify failed: %s - %s",
+                    notify_resp.status_code,
+                    notify_resp.text,
+                )
+                return False
+
+            # Retry briefly to let QL persist and expose the entity.
+            for _ in range(8):
+                entity_resp = client.get(entity_url, headers=ql_headers)
+                if entity_resp.status_code == 200:
+                    logger.info("QuantumLeap preflight validation passed.")
+                    return True
+                time.sleep(0.5)
+            
+            logger.error("QuantumLeap preflight validation failed: entity not queryable after notify.")
+            return False
+
+    except httpx.RequestError as e:
+        logger.error("QuantumLeap preflight validation error: %s", e)
+        return False
+
+
 def seed_historical_data(
     orion_url: str,
+    quantumleap_url: str,
     num_days: int,
     batch_size: int,
     fiware_service: str,
     fiware_servicepath: str,
     dry_run: bool = False,
+    skip_ql_validation: bool = False,
 ) -> int:
     """Seed historical data into Orion (v2).
 
@@ -360,12 +436,14 @@ def seed_historical_data(
     logger.info("Historical Data Seeding for FIWARE NGSI v2")
     logger.info("=" * 70)
     logger.info(f"Orion URL: {orion_url}")
+    logger.info(f"QuantumLeap URL: {quantumleap_url}")
     logger.info(f"Number of days: {num_days}")
     logger.info(f"Total sensors: {len(SENSORS)}")
     logger.info(f"Data points per sensor: {num_days * 24}")
     logger.info(f"Total data points: {len(SENSORS) * num_days * 24}")
     logger.info(f"Fiware-Service: {fiware_service}")
     logger.info(f"Dry run: {dry_run}")
+    logger.info(f"Skip QL validation: {skip_ql_validation}")
     logger.info("=" * 70)
 
     # Calculate time range
@@ -378,6 +456,15 @@ def seed_historical_data(
     if dry_run:
         logger.info("DRY RUN MODE - No data will be uploaded to Orion-LD")
         logger.info("")
+
+    if not dry_run and not skip_ql_validation:
+        if not validate_quantumleap_persistence(
+            quantumleap_url=quantumleap_url,
+            fiware_service=fiware_service,
+            fiware_servicepath=fiware_servicepath,
+        ):
+            logger.error("Stopping seed process because QuantumLeap preflight validation failed.")
+            return 1
 
     success_count = 0
     error_count = 0
@@ -436,6 +523,11 @@ def main() -> int:
         help="Orion-LD base URL (default: http://localhost:1026)",
     )
     parser.add_argument(
+        "--quantumleap-url",
+        default=os.getenv("QUANTUMLEAP_URL", "http://localhost:8668"),
+        help="QuantumLeap base URL (default: http://localhost:8668)",
+    )
+    parser.add_argument(
         "--num-days",
         type=int,
         default=7,
@@ -462,16 +554,23 @@ def main() -> int:
         action="store_true",
         help="Generate data without uploading to Orion-LD",
     )
+    parser.add_argument(
+        "--skip-ql-validation",
+        action="store_true",
+        help="Skip QuantumLeap preflight validation (not recommended)",
+    )
 
     args = parser.parse_args()
 
     return seed_historical_data(
         args.orion_url,
+        args.quantumleap_url,
         args.num_days,
         args.batch_size,
         args.fiware_service,
         args.fiware_servicepath,
         args.dry_run,
+        args.skip_ql_validation,
     )
 
 

@@ -12,7 +12,7 @@ set -e
 ORION="http://localhost:1026"
 IOT_AGENT="http://localhost:4041"
 QUANTUMLEAP="http://localhost:8668"
-FIWARE_SERVICE="air_noise"
+FIWARE_SERVICE="common"
 FIWARE_SERVICE_PATH="/"
 API_KEY="iot-agent-api-key-prod"
 NGSI_LD_CONTEXT="https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"

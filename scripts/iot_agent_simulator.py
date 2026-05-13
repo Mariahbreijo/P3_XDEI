@@ -28,7 +28,7 @@ import httpx
 IOT_AGENT_URL = "http://localhost:4041"
 IOT_AGENT_DATA_URL = "http://localhost:7896"
 ORION_URL = "http://localhost:1026"
-FIWARE_SERVICE = "air_noise"
+FIWARE_SERVICE = "common"
 FIWARE_SERVICE_PATH = "/"
 API_KEY = "iot-agent-api-key-prod"
 DEVICE_TRANSPORT = "HTTP"

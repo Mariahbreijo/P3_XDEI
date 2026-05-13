@@ -206,3 +206,42 @@ Proporcionar comandos curl para validar el flujo de datos.
 **Rama:** `feature/datos_historicos`  
 **Prioridad:** Alta  
 **Tipo:** Feature/Configuration
+
+## 🧩 Estado Real de la Rama
+
+La rama `feature/datos_historicos` ya no contiene solo la especificación inicial: ahora incluye la configuración operativa completa para persistencia histórica en FIWARE.
+
+### Backend y entorno
+
+- `backend/.env` sincronizado a `FIWARE_SERVICE=common` y `FIWARE_SERVICEPATH=/`.
+- `backend/app/config.py` usa `common` como valor por defecto para evitar divergencias entre API y scripts.
+- El proxy Orion del backend reenvía siempre `Fiware-Service: common` y `Fiware-ServicePath: /`.
+
+### Frontend
+
+- `frontend/app_fiware_sync.js` y `frontend/advanced_map.js` consumen el proxy del backend con `common`.
+- El frontend ya no depende de un fetch directo a Orion para cargar sensores.
+- `location` se interpreta tanto como `geo:point` en cadena `lat,lon` como en formato con `coordinates`, lo que cubre el payload real emitido por Orion.
+
+### QuantumLeap y TimescaleDB
+
+- `fiware/docker-compose.yml` mantiene la configuración de QuantumLeap con backend Timescale/PostgreSQL.
+- `fiware/init_timescaledb/01_init.sql` crea `common` y `mtcommon` para cubrir variantes de QuantumLeap y preparar `md_ets_metadata`.
+- Se conserva el montaje de `health.py` corregido para la versión de QuantumLeap usada en esta rama.
+
+### Scripts operativos
+
+- `scripts/fiware_subscriptions.py` crea suscripciones NGSI v2 con `idPattern: ".*"`.
+- `scripts/seed_historical_data.py` ya incorpora preflight de QuantumLeap mediante `/v2/notify` y valida persistencia antes de cargar el lote completo.
+- `scripts/fiware_setup.sh`, `scripts/iot_agent_simulator.py` y `scripts/manual_iot_agent_smoke_test.py` están alineados con `common` y `/`.
+
+### Validación práctica
+
+- QuantumLeap responde `healthy`.
+- `/health` devuelve `pass`.
+- El proxy del backend recupera entidades de Orion con el tenant correcto.
+- El frontend ya no queda bloqueado por CORS al depender del proxy.
+
+## 📌 Nota Operativa
+
+Si se modifica `backend/.env`, hay que reiniciar el proceso del backend para que `load_dotenv()` reevalúe los valores. El frontend solo necesita recarga de navegador.
