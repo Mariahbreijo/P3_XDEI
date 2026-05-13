@@ -62,10 +62,16 @@ def create_subscription(
     }
 
     # Subscription payload for NGSI v2
+    # Important: idPattern is mandatory when filtering by type in v2
     subscription = {
         "description": f"Subscription for {entity_type} entities to QuantumLeap",
         "subject": {
-            "entities": [{"type": entity_type}]
+            "entities": [
+                {
+                    "type": entity_type,
+                    "idPattern": ".*"
+                }
+            ]
         },
         "notification": {
             "http": {
