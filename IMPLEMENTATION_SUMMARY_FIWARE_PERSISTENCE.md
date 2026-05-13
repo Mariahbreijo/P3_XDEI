@@ -2,6 +2,7 @@
 
 **Rama:** `feature/datos_historicos`  
 **Fecha:** 2026-05-13  
+**API:** NGSI v2 (actualizado desde NGSI-LD)
 **Estado:** ✓ Completado
 
 ---
@@ -28,11 +29,12 @@ Documento detallado que especifica:
 
 **Funcionalidades:**
 ```python
-✓ Crea suscripción para AirQualityObserved
-✓ Crea suscripción para NoiseLevelObserved
+✓ Crea suscripción para AirQualityObserved (v2 API)
+✓ Crea suscripción para NoiseLevelObserved (v2 API)
 ✓ Configura notificación a http://fiware-quantumleap:8668/v1/notify
-✓ Usa headers NGSI-LD correctos (Fiware-Service, Fiware-ServicePath)
-✓ Verifica estado de suscripciones existentes
+✓ Usa headers NGSI v2 simplificados (Content-Type: application/json)
+✓ Endpoint: POST /v2/subscriptions
+✓ Verifica estado de suscripciones existentes (GET /v2/subscriptions)
 ✓ Manejo de errores y logging detallado
 ```
 
@@ -49,11 +51,12 @@ python3 scripts/fiware_subscriptions.py --orion-url http://localhost:1026
 ```
 
 **Características de Código:**
-- ✓ 195 líneas de código Python puro
+- ✓ 180 líneas de código Python puro
 - ✓ Logging estructurado y debug info
 - ✓ Manejo robusto de errores (httpx)
 - ✓ Documentación en docstrings
 - ✓ Totalmente parametrizable vía CLI y env vars
+- ✓ Compatible con NGSI v2
 
 ---
 

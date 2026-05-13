@@ -1,14 +1,14 @@
 # FIWARE Persistence Setup Guide
 
-**Objetivo:** Configurar el flujo de datos históricos desde Orion-LD hacia QuantumLeap y poblar la base de datos con datos sintéticos de los últimos 7 días.
+**Objetivo:** Configurar el flujo de datos históricos desde Orion (v2 API) hacia QuantumLeap y poblar la base de datos con datos sintéticos de los últimos 7 días.
 
 ## 📋 Contexto Técnico
 
-| Componente | URL | Contenedor | Estado |
-|-----------|-----|-----------|--------|
-| **Orion-LD** | http://localhost:1026 | `fiware-orion-ld` | Contenedor Bridge NGSI-LD |
-| **QuantumLeap** | http://localhost:8668 | `fiware-quantumleap` | Contenedor Time-Series DB (TimescaleDB) |
-| **TimescaleDB** | localhost:5432 | `fiware-timescaledb` | PostgreSQL con extensión TimescaleDB |
+| Componente | URL | Contenedor | API | Estado |
+|-----------|-----|-----------|-----|--------|
+| **Orion** | http://localhost:1026 | `fiware-orion-ld` | v2 | Contenedor bridge |
+| **QuantumLeap** | http://localhost:8668 | `fiware-quantumleap` | REST | Time-Series DB |
+| **TimescaleDB** | localhost:5432 | `fiware-timescaledb` | PostgreSQL | Almacenamiento |
 
 ### Tipos de Entidades
 
@@ -18,14 +18,15 @@
 ### Estado Actual
 
 - ✓ Contenedores levantados y "Healthy"
-- ✗ **Suscripciones vacías**: `GET /ngsi-ld/v1/subscriptions` devuelve `[]`
+- ✓ Orion responde en `GET /v2/version`
+- ✗ **Suscripciones vacías**: `GET /v2/subscriptions` devuelve `[]`
 - ✗ **Sin histórico**: QuantumLeap no tiene datos almacenados
 
 ---
 
-## 🚀 Configuración de Suscripciones
+## 🚀 Configuración de Suscripciones (NGSI v2)
 
-Las suscripciones actúan como **puente de datos**: cuando un sensor se actualiza en Orion-LD, automáticamente notifica a QuantumLeap para que lo almacene.
+Las suscripciones actúan como **puente de datos**: cuando un sensor se actualiza en Orion, automáticamente notifica a QuantumLeap para que lo almacene.
 
 ### Tarea 1: Crear Suscripciones
 
@@ -41,10 +42,26 @@ python3 scripts/fiware_subscriptions.py
 
 **¿Qué hace el script?**
 
-1. Crea una suscripción en Orion-LD para entidades tipo `AirQualityObserved`
-2. Crea una suscripción en Orion-LD para entidades tipo `NoiseLevelObserved`
+1. Crea una suscripción en Orion (v2) para entidades tipo `AirQualityObserved`
+2. Crea una suscripción en Orion (v2) para entidades tipo `NoiseLevelObserved`
 3. Configura ambas para notificar a `http://fiware-quantumleap:8668/v1/notify`
-4. Usa el contexto NGSI-LD y headers apropiados (`Fiware-Service: common`)
+4. Usa headers simplificados (sin Link headers NGSI-LD)
+
+**Formato NGSI v2 de suscripción:**
+```json
+{
+  "description": "Subscription for AirQualityObserved entities to QuantumLeap",
+  "subject": {
+    "entities": [{"type": "AirQualityObserved"}]
+  },
+  "notification": {
+    "http": {
+      "url": "http://fiware-quantumleap:8668/v1/notify"
+    }
+  },
+  "status": "active"
+}
+```
 
 **Opciones del script:**
 
@@ -60,7 +77,7 @@ python3 scripts/fiware_subscriptions.py \
 
 ---
 
-## 📊 Inyección de Datos Históricos Semanales
+## 📊 Inyección de Datos Históricos Semanales (NGSI v2)
 
 ### Tarea 2: Generar y Poblar Históricos
 
@@ -83,18 +100,32 @@ python3 scripts/seed_historical_data.py
 ✓ **24 sensores**: 6 de aire (Madrid/Barcelona/Valencia) + 4 de ruido (Madrid/Barcelona)  
 ✓ **168 puntos por sensor**: 7 días × 24 horas = 168 lecturas  
 ✓ **Variación realista**: Curvas day/night para PM2.5, PM10, ruido  
-✓ **Timestamp histórico**: Cada dato incluye `observedAt` con el timestamp pasado  
-✓ **Método correcto**: Envía a Orion-LD (no directamente a QuantumLeap)  
+✓ **Timestamp histórico**: Cada dato incluye `dateObserved` con el timestamp pasado  
+✓ **Método correcto**: Envía a Orion (v2 API) mediante PATCH /v2/entities/{id}/attrs
+✓ **Formato NGSI v2**: Sin @context, headers simplificados
 
 **¿Cómo funciona?**
 
 1. Genera 7 días de datos hacia atrás desde la hora actual
 2. Para cada hora y sensor:
    - Calcula valores realistas usando curvas sinusoidales (día/noche)
-   - Incluye el timestamp correcto en el campo `observedAt`
-   - Realiza upsert en Orion-LD
+   - Incluye el timestamp correcto en el campo `dateObserved`
+   - Realiza PATCH a Orion (actualiza si existe, o POST si no existe)
 3. Las suscripciones notifican automáticamente a QuantumLeap
 4. QuantumLeap almacena los datos en TimescaleDB con timestamp histórico
+
+**Formato NGSI v2 de entidad:**
+```json
+{
+  "id": "urn:ngsi-ld:AirQualityObserved:Madrid:001",
+  "type": "AirQualityObserved",
+  "PM2_5": {"type": "Number", "value": 35.5},
+  "PM10": {"type": "Number", "value": 65.0},
+  "NO2": {"type": "Number", "value": 50.0},
+  "dateObserved": {"type": "DateTime", "value": "2026-05-06T10:00:00Z"},
+  "location": {"type": "geo:point", "value": "-3.7038,40.4168"}
+}
+```
 
 **Opciones del script:**
 
@@ -123,10 +154,9 @@ python3 scripts/seed_historical_data.py \
 ### Verificar Suscripciones
 
 ```bash
-# Listar subscripciones en Orion-LD
+# Listar subscripciones en Orion (v2 API)
 curl -X GET \
-  http://localhost:1026/ngsi-ld/v1/subscriptions \
-  -H "Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"" \
+  http://localhost:1026/v2/subscriptions \
   -H "Fiware-Service: common" \
   -H "Fiware-ServicePath: /"
 
@@ -134,17 +164,19 @@ curl -X GET \
 # [
 #   {
 #     "id": "...",
-#     "type": "Subscription",
-#     "entities": [{"type": "AirQualityObserved"}],
-#     "notification": {...},
+#     "description": "Subscription for AirQualityObserved entities to QuantumLeap",
+#     "subject": {
+#       "entities": [{"type": "AirQualityObserved"}]
+#     },
+#     "notification": {
+#       "http": {"url": "http://fiware-quantumleap:8668/v1/notify"}
+#     },
 #     "status": "active"
 #   },
 #   {
 #     "id": "...",
-#     "type": "Subscription",
-#     "entities": [{"type": "NoiseLevelObserved"}],
-#     "notification": {...},
-#     "status": "active"
+#     "description": "Subscription for NoiseLevelObserved entities to QuantumLeap",
+#     ...
 #   }
 # ]
 ```
@@ -182,16 +214,15 @@ curl -X GET \
 ### Verificar Sincronización
 
 ```bash
-# 1. Actualizar un sensor en tiempo real
+# 1. Actualizar un sensor en tiempo real (NGSI v2)
 curl -X PATCH \
-  http://localhost:1026/ngsi-ld/v1/entities/urn:ngsi-ld:AirQualityObserved:Madrid:001/attrs \
-  -H "Content-Type: application/ld+json" \
-  -H "Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"" \
+  http://localhost:1026/v2/entities/urn:ngsi-ld:AirQualityObserved:Madrid:001/attrs \
+  -H "Content-Type: application/json" \
   -H "Fiware-Service: common" \
   -H "Fiware-ServicePath: /" \
   -d '{
-    "PM2_5": {"type": "Property", "value": 35.5},
-    "dateObserved": {"type": "Property", "value": "2026-05-13T14:30:00Z"}
+    "PM2_5": {"type": "Number", "value": 35.5},
+    "dateObserved": {"type": "DateTime", "value": "2026-05-13T14:30:00Z"}
   }'
 
 # 2. Esperar 2 segundos (tiempo de notificación)
@@ -281,8 +312,8 @@ curl -X GET \
 ### ¿Las suscripciones no aparecen?
 
 ```bash
-# Verificar que Orion-LD está corriendo
-curl http://localhost:1026/version
+# Verificar que Orion está corriendo (v2 API)
+curl http://localhost:1026/v2/version
 
 # Verificar conectividad
 docker exec fiware-orion-ld curl http://fiware-quantumleap:8668/version
@@ -298,9 +329,8 @@ docker logs fiware-quantumleap
 # Verificar que TimescaleDB está corriendo
 docker exec fiware-timescaledb pg_isready -U postgres
 
-# Revisar subscripción en detalle
-curl -X GET http://localhost:1026/ngsi-ld/v1/subscriptions/{subscription-id} \
-  -H "Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld>; rel=\"http://www.w3.org/ns/json-ld#context\"; type=\"application/ld+json\"" \
+# Verificar subscripción en detalle (v2 API)
+curl -X GET http://localhost:1026/v2/subscriptions/{subscription-id} \
   -H "Fiware-Service: common" \
   -H "Fiware-ServicePath: /"
 
@@ -314,8 +344,8 @@ docker logs fiware-quantumleap | tail -50
 # Ejecutar en dry-run para ver qué hace
 python3 scripts/seed_historical_data.py --dry-run
 
-# Verificar conectividad a Orion-LD
-curl http://localhost:1026/version
+# Verificar conectividad a Orion
+curl http://localhost:1026/v2/version
 
 # Habilitar debug (revisar código para ver opciones)
 python3 scripts/seed_historical_data.py --batch-size 1
@@ -325,7 +355,8 @@ python3 scripts/seed_historical_data.py --batch-size 1
 
 ## 📚 Referencias
 
-- [FIWARE Orion-LD Documentation](https://fiware-orion-ld.readthedocs.io/)
+- [FIWARE Orion Documentation](https://fiware-orion.readthedocs.io/)
+- [FIWARE Orion v2 API](https://fiware-orion.readthedocs.io/en/master/user/walkthrough_apiv2/)
 - [FIWARE QuantumLeap Documentation](https://quantumleap.readthedocs.io/)
-- [NGSI-LD Specification](https://www.etsi.org/deliver/etsi_gs/CIM/001_099/009/01.04.01_60/gs_cim_009v010401p.pdf)
+- [NGSI v2 Specification](https://fiware.github.io/specifications/ngsiv2/stable/)
 - [Smart Data Models](https://github.com/smart-data-models)
